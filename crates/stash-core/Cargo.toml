@@ -6,3 +6,7 @@ license.workspace = true
 
 [dependencies]
 thiserror = { workspace = true }
+uuid = { version = "1.23.3", features = ["v4"] }
+
+[dev-dependencies]
+proptest = "1.11.0"
