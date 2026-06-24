@@ -1,0 +1,23 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/stash-core",
+    "crates/stash-storage",
+    "crates/stash-tui",
+]
+
+# Shared metadata inherited by member crates via `version.workspace = true`, etc.
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Your Name <you@example.com>"]
+license = "MIT"
+repository = "https://github.com/yourname/stash"
+rust-version = "1.93.0"
+
+# Centralize dependency versions here once Epic 2+ adds crates,
+# so every member references the same version with `dep = { workspace = true }`.
+[workspace.dependencies]
+thiserror = "2"
+anyhow = "1"
+serde = { version = "1", features = ["derive"] }

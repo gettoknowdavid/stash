@@ -1,0 +1,9 @@
+[package]
+name = "stash-storage"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+stash-core = { path = "../stash-core" }
+thiserror = { workspace = true }
