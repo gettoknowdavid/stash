@@ -3,3 +3,7 @@
 #![warn(clippy::nursery)]
 // Allow a few pedantic lints that are net-negative for this domain:
 #![allow(clippy::module_name_repetitions)]
+
+mod error;
+
+pub use error::CoreError;
