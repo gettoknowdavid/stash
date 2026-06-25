@@ -5,4 +5,7 @@
 #![allow(clippy::module_name_repetitions)]
 
 pub mod error;
+pub mod repository;
+pub mod sqlite;
+
 pub use error::StorageError;

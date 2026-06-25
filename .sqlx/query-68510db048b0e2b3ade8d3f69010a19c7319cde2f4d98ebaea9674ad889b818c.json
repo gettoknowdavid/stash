@@ -1,0 +1,122 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT * FROM items WHERE id == ?1",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "items",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "name": "sku",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "items",
+            "name": "sku"
+          }
+        }
+      },
+      {
+        "name": "name",
+        "ordinal": 2,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "items",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "name": "description",
+        "ordinal": 3,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "items",
+            "name": "description"
+          }
+        }
+      },
+      {
+        "name": "category_id",
+        "ordinal": 4,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "items",
+            "name": "category_id"
+          }
+        }
+      },
+      {
+        "name": "unit_cost",
+        "ordinal": 5,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "items",
+            "name": "unit_cost"
+          }
+        }
+      },
+      {
+        "name": "reorder_threshold",
+        "ordinal": 6,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "items",
+            "name": "reorder_threshold"
+          }
+        }
+      },
+      {
+        "name": "created_at",
+        "ordinal": 7,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "items",
+            "name": "created_at"
+          }
+        }
+      },
+      {
+        "name": "updated_at",
+        "ordinal": 8,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "items",
+            "name": "updated_at"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "68510db048b0e2b3ade8d3f69010a19c7319cde2f4d98ebaea9674ad889b818c"
+}

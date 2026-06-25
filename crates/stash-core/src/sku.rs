@@ -4,7 +4,9 @@ use crate::error::ValidationError;
 // once you HAVE a Sku value, you know — by its very existence — that
 // it's valid. No need to re-check it everywhere else in the codebase.
 
-pub struct Sku(String);
+#[derive(Debug, Clone, serde::Serialize, sqlx::Type)]
+#[sqlx(transparent)]
+pub struct Sku(pub String);
 impl Sku {
     /// Parses a raw string into a validated SKU (Stock Keeping Unit) object.
     ///
@@ -35,5 +37,15 @@ impl Sku {
         }
 
         Ok(Self(raw.to_uppercase()))
+    }
+}
+impl From<Sku> for String {
+    fn from(raw: Sku) -> Self {
+        raw.0
+    }
+}
+impl From<String> for Sku {
+    fn from(raw: String) -> Self {
+        Self::parse(&raw).expect("Invalid SKU")
     }
 }

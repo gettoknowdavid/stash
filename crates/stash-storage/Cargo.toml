@@ -5,5 +5,7 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-stash-core = { path = "../stash-core" }
+stash-core = { path = "../stash-core", features = ["sqlx"] }
 thiserror = { workspace = true }
+async-trait = "0.1.89"
+sqlx = { version = "0.9.0", features = ["sqlite", "uuid", "time", "macros"] }

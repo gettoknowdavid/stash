@@ -1,24 +1,45 @@
-use crate::category::Category;
 use crate::error::ValidationError;
-use crate::ids::ItemId;
+use crate::ids::{CategoryId, ItemId};
 use crate::money::Money;
 use crate::sku::Sku;
+use sqlx::{Error, Row};
 
+#[derive(Clone, Debug)]
 pub struct Item {
     pub id: ItemId,
     pub sku: Sku,
     pub name: String,
-    pub description: String,
-    pub category: Category,
+    pub description: Option<String>,
+    pub category_id: CategoryId,
     pub unit_cost: Money,
-    pub reorder_threshold: u32,
+    pub reorder_threshold: i64,
+}
+impl<'r> sqlx::FromRow<'r, sqlx::sqlite::SqliteRow> for Item {
+    fn from_row(row: &'r sqlx::sqlite::SqliteRow) -> Result<Self, Error> {
+        let id: String = row.try_get("id")?;
+        let sku: String = row.try_get("sku")?;
+        let name: String = row.try_get("name")?;
+        let description: Option<String> = row.try_get("description")?;
+        let c_id: String = row.try_get("category_id")?;
+        let unit_cost: i64 = row.try_get("unit_cost")?;
+        let reorder_threshold: i64 = row.try_get("reorder_threshold")?;
+        Ok(Self {
+            id: ItemId::from(id),
+            sku: Sku::from(sku),
+            name,
+            description,
+            category_id: CategoryId::from(c_id),
+            unit_cost: Money(unit_cost),
+            reorder_threshold,
+        })
+    }
 }
 
 pub struct ItemBuilder {
     sku: Option<Sku>,
     name: Option<String>,
     unit_cost: Option<Money>,
-    reorder_threshold: u32,
+    reorder_threshold: i64,
 }
 impl Default for ItemBuilder {
     fn default() -> Self {
@@ -28,12 +49,7 @@ impl Default for ItemBuilder {
 impl ItemBuilder {
     #[must_use]
     pub const fn new() -> Self {
-        Self {
-            sku: None,
-            name: None,
-            unit_cost: None,
-            reorder_threshold: 0,
-        }
+        Self { sku: None, name: None, unit_cost: None, reorder_threshold: 0 }
     }
 
     #[must_use]
@@ -81,18 +97,27 @@ impl ItemBuilder {
     pub fn build(self) -> Result<Item, ValidationError> {
         let sku = self.sku.ok_or(ValidationError::MissingField("sku"))?;
         let name = self.name.ok_or(ValidationError::MissingField("name"))?;
-        let unit_cost = self
-            .unit_cost
-            .ok_or(ValidationError::MissingField("unit_cost"))?;
+        let unit_cost = self.unit_cost.ok_or(ValidationError::MissingField("unit_cost"))?;
 
         Ok(Item {
-            id: ItemId::default(),
+            id: ItemId::new(),
             sku,
             name,
-            description: String::new(),
-            category: Category::Other("uncategorized".into()),
+            description: None,
+            category_id: CategoryId::new(),
             unit_cost,
             reorder_threshold: self.reorder_threshold,
         })
     }
+}
+
+#[derive(Default)]
+pub struct ItemFilter {
+    pub category_id: Option<CategoryId>,
+    pub below_threshold_only: bool,
+    pub search_text: Option<String>,
+    pub sku_prefix: Option<String>,
+
+    pub limit: u32,
+    pub offset: u32,
 }

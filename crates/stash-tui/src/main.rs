@@ -1,4 +1,4 @@
-use anyhow::{Result, Context};
+use anyhow::{Context, Result};
 
 fn main() -> Result<()> {
     run().context("stash exited with an error")

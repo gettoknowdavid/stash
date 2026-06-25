@@ -21,6 +21,9 @@ pub enum ValidationError {
 
     #[error("invalid SKU length: {0}")]
     InvalidSkuLength(usize),
+
+    #[error("database error: {0}")]
+    Database(#[from] sqlx::Error),
 }
 
 #[cfg(test)]
@@ -29,13 +32,7 @@ mod tests {
 
     #[test]
     fn insufficient_stock_error_includes_quantities() {
-        let err = CoreError::InsufficientStock {
-            requested: 20,
-            available: 2,
-        };
-        assert_eq!(
-            err.to_string(),
-            "insufficient stock: requested 20, available 2"
-        );
+        let err = CoreError::InsufficientStock { requested: 20, available: 2 };
+        assert_eq!(err.to_string(), "insufficient stock: requested 20, available 2");
     }
 }

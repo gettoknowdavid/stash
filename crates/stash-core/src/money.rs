@@ -2,8 +2,9 @@
 // Floats (f64) lose precision for currency — 0.1 + 0.2 != 0.3 in
 // floating point. Kobo-as-i64 sidesteps that entirely.
 
-#[derive(Clone)]
-pub struct Money(i64);
+#[derive(Debug, Clone, serde::Serialize, sqlx::Type)]
+#[sqlx(transparent)]
+pub struct Money(pub i64);
 impl Money {
     #[must_use]
     #[allow(clippy::cast_possible_truncation)]
@@ -13,5 +14,16 @@ impl Money {
 
     pub fn checked_add(&self, other: &Self) -> Option<Self> {
         self.0.checked_add(other.0).map(Money)
+    }
+}
+impl From<i64> for Money {
+    fn from(value: i64) -> Self {
+        Self(value)
+    }
+}
+
+impl From<Money> for i64 {
+    fn from(money: Money) -> Self {
+        money.0
     }
 }

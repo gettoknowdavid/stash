@@ -54,17 +54,14 @@ impl StockLevel {
     ///
     pub fn apply(&self, movement: &StockMovement) -> Result<Self, CoreError> {
         let new_qty = match movement {
-            StockMovement::Inbound { qty, .. } => self
-                .quantity
-                .checked_add(*qty)
-                .ok_or(CoreError::QuantityOverflow)?,
+            StockMovement::Inbound { qty, .. } => {
+                self.quantity.checked_add(*qty).ok_or(CoreError::QuantityOverflow)?
+            }
             StockMovement::Outbound { qty, .. } => {
-                self.quantity
-                    .checked_sub(*qty)
-                    .ok_or(CoreError::InsufficientStock {
-                        available: self.quantity,
-                        requested: *qty,
-                    })?
+                self.quantity.checked_sub(*qty).ok_or(CoreError::InsufficientStock {
+                    available: self.quantity,
+                    requested: *qty,
+                })?
             }
             StockMovement::Adjustment { delta, .. } => {
                 let signed_qty = i64::from(self.quantity) + i64::from(*delta);
@@ -83,9 +80,6 @@ impl StockLevel {
             }
         };
 
-        Ok(Self {
-            quantity: new_qty,
-            ..self.clone()
-        })
+        Ok(Self { quantity: new_qty, ..self.clone() })
     }
 }
