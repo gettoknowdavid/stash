@@ -39,6 +39,7 @@ impl<'r> sqlx::FromRow<'r, sqlx::sqlite::SqliteRow> for Item {
 pub struct ItemBuilder {
     sku: Option<Sku>,
     name: Option<String>,
+    category_id: Option<CategoryId>,
     unit_cost: Option<Money>,
     reorder_threshold: i64,
 }
@@ -50,7 +51,7 @@ impl Default for ItemBuilder {
 impl ItemBuilder {
     #[must_use]
     pub const fn new() -> Self {
-        Self { sku: None, name: None, unit_cost: None, reorder_threshold: 0 }
+        Self { sku: None, name: None, category_id: None, unit_cost: None, reorder_threshold: 0 }
     }
 
     #[must_use]
@@ -62,6 +63,12 @@ impl ItemBuilder {
     #[must_use]
     pub fn name(mut self, name: String) -> Self {
         self.name = Some(name);
+        self
+    }
+
+    #[must_use]
+    pub const fn category_id(mut self, category_id: CategoryId) -> Self {
+        self.category_id = Some(category_id);
         self
     }
 
@@ -99,13 +106,14 @@ impl ItemBuilder {
         let sku = self.sku.ok_or(ValidationError::MissingField("sku"))?;
         let name = self.name.ok_or(ValidationError::MissingField("name"))?;
         let unit_cost = self.unit_cost.ok_or(ValidationError::MissingField("unit_cost"))?;
+        let category_id = self.category_id.ok_or(ValidationError::MissingField("category_id"))?;
 
         Ok(Item {
             id: ItemId::new(),
             sku,
             name,
             description: None,
-            category_id: CategoryId::new(),
+            category_id,
             unit_cost,
             reorder_threshold: self.reorder_threshold,
         })
