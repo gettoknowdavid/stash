@@ -1,5 +1,24 @@
 pub mod bridge;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct KeyBinding {
+    pub code: crossterm::event::KeyCode,
+    pub modifiers: crossterm::event::KeyModifiers,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Action {
+    Quit,
+    MoveUp,
+    MoveDown,
+    Select,
+    NewItem,
+    Delete,
+    Cancel,
+}
+
+pub struct KeyMap(pub std::collections::HashMap<KeyBinding, Action>);
+
 #[derive(Debug, Clone)]
 pub enum Screen {
     Dashboard,
