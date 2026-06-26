@@ -21,9 +21,6 @@ pub enum ValidationError {
 
     #[error("invalid SKU length: {0}")]
     InvalidSkuLength(usize),
-
-    #[error("database error: {0}")]
-    Database(#[from] sqlx::Error),
 }
 
 #[cfg(test)]

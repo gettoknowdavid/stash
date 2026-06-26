@@ -1,3 +1,5 @@
+use tui_input::backend::crossterm::EventHandler;
+
 pub mod bridge;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -142,7 +144,75 @@ impl App {
                 self.screen = Screen::ItemList;
                 None
             }
+            (InputMode::Editing, KeyCode::Tab) => {
+                if let Screen::AddItem(form) = &mut self.screen {
+                    form.focused_field = (form.focused_field + 1) % 3;
+                }
+                None
+            }
+            (InputMode::Editing, KeyCode::BackTab) => {
+                if let Screen::AddItem(form) = &mut self.screen {
+                    form.focused_field = form.focused_field.checked_sub(1).unwrap_or(2);
+                }
+                None
+            }
+            (InputMode::Editing, KeyCode::Enter) => {
+                if let Screen::AddItem(form) = &mut self.screen {
+                    if form.focused_field < 2 {
+                        form.focused_field += 1;
+                        return None;
+                    }
+                    // last field — attempt submit
+                    return self.try_submit_add_item_form();
+                }
+                None
+            }
+            (InputMode::Editing, _) => {
+                // route every other key (chars, backspace, arrows, home/end) into
+                // whichever field currently has focus
+                if let Screen::AddItem(form) = &mut self.screen {
+                    let field = match form.focused_field {
+                        0 => &mut form.sku,
+                        1 => &mut form.name,
+                        _ => &mut form.unit_cost,
+                    };
+                    field.handle_event(&crossterm::event::Event::Key(key));
+                }
+                None
+            }
             _ => None,
         }
+    }
+    fn try_submit_add_item_form(&mut self) -> Option<Command> {
+        let Screen::AddItem(form) = &mut self.screen else { return None };
+        let sku = match stash_core::sku::Sku::parse(form.sku.value()) {
+            Ok(sku) => sku,
+            Err(e) => {
+                form.error = Some(e.to_string());
+                return None;
+            }
+        };
+        let unit_cost: i64 = match form.unit_cost.value().parse() {
+            Ok(v) => v,
+            Err(_) => {
+                form.error = Some("unit cost must be a whole number (kobo)".into());
+                return None;
+            }
+        };
+        if form.name.value().trim().is_empty() {
+            form.error = Some("name is required".into());
+            return None;
+        }
+        let category_id = form.category_id?;
+        let input = stash_storage::repository::CreateItemInput {
+            id: stash_core::ids::ItemId::new(),
+            sku,
+            name: form.name.value().to_string(),
+            description: None,
+            category_id,
+            unit_cost: stash_core::money::Money(unit_cost),
+            reorder_threshold: 0,
+        };
+        Some(Command::SaveItem(input))
     }
 }

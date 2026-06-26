@@ -5,6 +5,7 @@ pub struct AddItemFormState {
     pub unit_cost: tui_input::Input,
     pub focused_field: usize,
     pub error: Option<String>,
+    pub category_id: Option<stash_core::ids::CategoryId>,
 }
 
 pub fn render(f: &mut ratatui::Frame, _app: &crate::app::App, form: &AddItemFormState) {

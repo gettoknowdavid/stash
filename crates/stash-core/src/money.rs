@@ -15,6 +15,10 @@ impl Money {
     pub fn checked_add(&self, other: &Self) -> Option<Self> {
         self.0.checked_add(other.0).map(Money)
     }
+
+    pub fn checked_sub(&self, other: &Self) -> Option<Self> {
+        self.0.checked_sub(other.0).map(Money)
+    }
 }
 impl From<i64> for Money {
     fn from(value: i64) -> Self {
