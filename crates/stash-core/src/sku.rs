@@ -44,8 +44,9 @@ impl From<Sku> for String {
         raw.0
     }
 }
-impl From<String> for Sku {
-    fn from(raw: String) -> Self {
-        Self::parse(&raw).expect("Invalid SKU")
+impl TryFrom<String> for Sku {
+    type Error = ValidationError;
+    fn try_from(raw: String) -> Result<Self, Self::Error> {
+        Self::parse(&raw)
     }
 }

@@ -76,7 +76,7 @@ pub trait ItemRepository: Send + Sync {
     /// # Errors
     /// This function will return a `StorageError` in case of failure. Refer to
     /// the `StorageError` documentation for more details regarding the possible error variants.
-    async fn update(&self, id: ItemId, input: &UpdateItemInput<'_>) -> Result<(), StorageError>;
+    async fn update(&self, id: ItemId, input: &UpdateItemInput<'_>) -> Result<Item, StorageError>;
 
     /// Deletes an item from the storage.
     ///

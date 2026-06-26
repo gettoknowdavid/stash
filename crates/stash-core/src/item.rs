@@ -2,7 +2,7 @@ use crate::error::ValidationError;
 use crate::ids::{CategoryId, ItemId};
 use crate::money::Money;
 use crate::sku::Sku;
-use sqlx::{Error, Row};
+use sqlx::Row;
 
 #[derive(Clone, Debug)]
 pub struct Item {
@@ -15,7 +15,7 @@ pub struct Item {
     pub reorder_threshold: i64,
 }
 impl<'r> sqlx::FromRow<'r, sqlx::sqlite::SqliteRow> for Item {
-    fn from_row(row: &'r sqlx::sqlite::SqliteRow) -> Result<Self, Error> {
+    fn from_row(row: &'r sqlx::sqlite::SqliteRow) -> Result<Self, sqlx::Error> {
         let id: String = row.try_get("id")?;
         let sku: String = row.try_get("sku")?;
         let name: String = row.try_get("name")?;
@@ -23,12 +23,13 @@ impl<'r> sqlx::FromRow<'r, sqlx::sqlite::SqliteRow> for Item {
         let c_id: String = row.try_get("category_id")?;
         let unit_cost: i64 = row.try_get("unit_cost")?;
         let reorder_threshold: i64 = row.try_get("reorder_threshold")?;
+
         Ok(Self {
-            id: ItemId::from(id),
-            sku: Sku::from(sku),
+            id: ItemId::try_from(id).map_err(decode_sqlx_err)?,
+            sku: Sku::try_from(sku).map_err(decode_sqlx_err)?,
             name,
             description,
-            category_id: CategoryId::from(c_id),
+            category_id: CategoryId::try_from(c_id).map_err(decode_sqlx_err)?,
             unit_cost: Money(unit_cost),
             reorder_threshold,
         })
@@ -120,4 +121,8 @@ pub struct ItemFilter {
 
     pub limit: u32,
     pub offset: u32,
+}
+
+fn decode_sqlx_err<E: std::error::Error + Send + Sync + 'static>(e: E) -> sqlx::Error {
+    sqlx::Error::Decode(Box::new(e))
 }

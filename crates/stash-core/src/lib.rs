@@ -4,9 +4,6 @@
 // Allow a few pedantic lints that are net-negative for this domain:
 #![allow(clippy::module_name_repetitions)]
 
-#[cfg(feature = "sqlx")]
-pub use sqlx;
-
 pub mod category;
 mod error;
 pub mod ids;

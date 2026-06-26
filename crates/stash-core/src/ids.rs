@@ -17,14 +17,10 @@ impl From<ItemId> for String {
         id.0.to_string()
     }
 }
-impl From<String> for ItemId {
-    fn from(s: String) -> Self {
-        Self(uuid::Uuid::parse_str(&s).unwrap_or_default())
-    }
-}
-impl From<Option<String>> for ItemId {
-    fn from(s: Option<String>) -> Self {
-        s.map_or_else(Self::new, |value| Self(uuid::Uuid::parse_str(&value).unwrap_or_default()))
+impl TryFrom<String> for ItemId {
+    type Error = uuid::Error;
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        Ok(Self(uuid::Uuid::parse_str(&s)?))
     }
 }
 
@@ -47,12 +43,12 @@ impl From<WarehouseId> for String {
         id.0.to_string()
     }
 }
-impl From<String> for WarehouseId {
-    fn from(s: String) -> Self {
-        Self(uuid::Uuid::parse_str(&s).unwrap_or_default())
+impl TryFrom<String> for WarehouseId {
+    type Error = uuid::Error;
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        Ok(Self(uuid::Uuid::parse_str(&s)?))
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, sqlx::Type)]
 #[sqlx(transparent)]
 pub struct CategoryId(pub uuid::Uuid);
@@ -72,8 +68,9 @@ impl From<CategoryId> for String {
         id.0.to_string()
     }
 }
-impl From<String> for CategoryId {
-    fn from(s: String) -> Self {
-        Self(uuid::Uuid::parse_str(&s).unwrap_or_default())
+impl TryFrom<String> for CategoryId {
+    type Error = uuid::Error;
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        Ok(Self(uuid::Uuid::parse_str(&s)?))
     }
 }
