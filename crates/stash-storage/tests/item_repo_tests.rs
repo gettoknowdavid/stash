@@ -126,5 +126,5 @@ async fn list_filters_by_search_text() {
     let results = repo.list(filter).await.unwrap();
 
     assert_eq!(results.len(), 1);
-    assert_eq!(results[0].name, "Red Widget");
+    assert_eq!(results[0].item.name, "Red Widget");
 }

@@ -2,7 +2,7 @@
 // Floats (f64) lose precision for currency — 0.1 + 0.2 != 0.3 in
 // floating point. Kobo-as-i64 sidesteps that entirely.
 
-#[derive(Debug, Clone, serde::Serialize, sqlx::Type)]
+#[derive(Debug, Clone, sqlx::Type)]
 #[sqlx(transparent)]
 pub struct Money(pub i64);
 impl Money {

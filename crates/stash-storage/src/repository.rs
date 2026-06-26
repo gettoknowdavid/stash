@@ -1,6 +1,6 @@
 use crate::StorageError;
 use stash_core::ids::{CategoryId, ItemId};
-use stash_core::item::{Item, ItemFilter};
+use stash_core::item::{Item, ItemFilter, ItemWithStock};
 use stash_core::money::Money;
 use stash_core::sku::Sku;
 
@@ -59,7 +59,7 @@ pub trait ItemRepository: Send + Sync {
     /// Returns a `StorageError` if there is an issue with the storage system or while applying the filter.
     ///
     /// # Examples
-    async fn list(&self, filter: ItemFilter) -> Result<Vec<Item>, StorageError>;
+    async fn list(&self, filter: ItemFilter) -> Result<Vec<ItemWithStock>, StorageError>;
 
     /// Updates an existing item in the storage.
     ///

@@ -18,8 +18,8 @@ pub fn render(f: &mut ratatui::Frame, app: &crate::app::App) {
         .items
         .iter()
         .enumerate()
-        .map(|(i, item)| {
-            let below = false;
+        .map(|(i, entry)| {
+            let below = entry.qty < entry.item.reorder_threshold;
             let style = if below {
                 Style::default().fg(Color::Red)
             } else if i == app.selected {
@@ -29,9 +29,9 @@ pub fn render(f: &mut ratatui::Frame, app: &crate::app::App) {
             };
 
             Row::new(vec![
-                Cell::from(item.sku.0.clone()),
-                Cell::from(item.name.clone()),
-                Cell::from(item.category_id.0.to_string()),
+                Cell::from(entry.item.sku.0.clone()),
+                Cell::from(entry.item.name.clone()),
+                Cell::from(entry.item.category_id.0.to_string()),
                 Cell::from("—".to_string()),
                 Cell::from(if below { "LOW" } else { "OK" }),
             ])

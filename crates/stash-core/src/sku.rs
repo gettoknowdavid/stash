@@ -4,7 +4,7 @@ use crate::error::ValidationError;
 // once you HAVE a Sku value, you know — by its very existence — that
 // it's valid. No need to re-check it everywhere else in the codebase.
 
-#[derive(Debug, Clone, serde::Serialize, sqlx::Type)]
+#[derive(Debug, Clone, sqlx::Type)]
 #[sqlx(transparent)]
 pub struct Sku(pub String);
 impl Sku {

@@ -24,8 +24,8 @@ pub fn render(f: &mut ratatui::Frame, app: &crate::app::App) {
         .split(rows[1]);
 
     let total_skus = app.items.len();
-    let low_stock = app.items.iter().filter(|_| false).count();
-    let total_value: i64 = app.items.iter().map(|i| i.unit_cost.0).sum();
+    let low_stock = app.items.iter().filter(|i| i.qty < i.item.reorder_threshold).count();
+    let total_value: i64 = app.items.iter().map(|i| i.item.unit_cost.0).sum();
 
     f.render_widget(stat_widget("Total SKUs", total_skus.to_string()), stats_col[0]);
     f.render_widget(stat_widget("Low Stock", low_stock.to_string()), stats_col[1]);

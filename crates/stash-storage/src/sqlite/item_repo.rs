@@ -1,7 +1,7 @@
 use crate::repository::{CreateItemInput, ItemRepository, UpdateItemInput};
 use crate::StorageError;
 use stash_core::ids::ItemId;
-use stash_core::item::{Item, ItemFilter};
+use stash_core::item::{Item, ItemFilter, ItemWithStock};
 
 pub struct SqliteItemRepository {
     db: sqlx::sqlite::SqlitePool,
@@ -47,19 +47,16 @@ impl ItemRepository for SqliteItemRepository {
         Ok(row)
     }
 
-    async fn list(&self, filter: ItemFilter) -> Result<Vec<Item>, StorageError> {
+    async fn list(&self, filter: ItemFilter) -> Result<Vec<ItemWithStock>, StorageError> {
         let mut qb = sqlx::QueryBuilder::new(
-            "SELECT items.* FROM items \
-             LEFT JOIN stock_levels ON stock_levels.item_id = items.id \
-             WHERE 1 = 1",
+            "SELECT items.*, COALESCE(SUM(stock_levels.quantity), 0) AS total_quantity \
+            FROM items \
+            LEFT JOIN stock_levels ON stock_levels.item_id = items.id \
+            WHERE 1 = 1",
         );
 
         if let Some(category_id) = &filter.category_id {
             qb.push(" AND items.category_id = ").push_bind(category_id.0.to_string());
-        }
-
-        if filter.below_threshold_only {
-            qb.push(" AND stock_levels.quantity < items.reorder_threshold");
         }
 
         if let Some(text) = &filter.search_text {
@@ -72,10 +69,15 @@ impl ItemRepository for SqliteItemRepository {
         }
 
         qb.push(" GROUP BY items.id");
+
+        if filter.below_threshold_only {
+            qb.push(" HAVING total_quantity < items.reorder_threshold");
+        }
+
         qb.push(" LIMIT ").push_bind(i64::from(filter.limit));
         qb.push(" OFFSET ").push_bind(i64::from(filter.offset));
 
-        let rows = qb.build_query_as::<Item>().fetch_all(&self.db).await?;
+        let rows = qb.build_query_as::<ItemWithStock>().fetch_all(&self.db).await?;
         Ok(rows)
     }
 

@@ -131,6 +131,26 @@ pub struct ItemFilter {
     pub offset: u32,
 }
 
+#[derive(Clone, Debug)]
+pub struct ItemWithStock {
+    pub item: Item,
+    pub qty: i64,
+}
+impl ItemWithStock {
+    #[must_use]
+    pub const fn from_item(item: Item) -> Self {
+        Self { item, qty: 0 }
+    }
+}
+impl<'r> sqlx::FromRow<'r, sqlx::sqlite::SqliteRow> for ItemWithStock {
+    fn from_row(row: &'r sqlx::sqlite::SqliteRow) -> Result<Self, sqlx::Error> {
+        Ok(Self {
+            item: Item::from_row(row)?, // reuse Item's FromRow
+            qty: row.try_get("total_quantity")?,
+        })
+    }
+}
+
 fn decode_sqlx_err<E: std::error::Error + Send + Sync + 'static>(e: E) -> sqlx::Error {
     sqlx::Error::Decode(Box::new(e))
 }

@@ -2053,7 +2053,6 @@ name = "stash-core"
 version = "0.1.0"
 dependencies = [
  "proptest",
- "serde",
  "sqlx",
  "thiserror 2.0.18",
  "time",

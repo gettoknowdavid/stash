@@ -42,8 +42,8 @@ pub enum InputMode {
 pub enum Message {
     Tick,
     KeyPressed(crossterm::event::KeyEvent),
-    ItemsLoaded(Vec<stash_core::item::Item>),
-    ItemSaved(stash_core::item::Item),
+    ItemsLoaded(Vec<stash_core::item::ItemWithStock>),
+    ItemSaved(stash_core::item::ItemWithStock),
     StockUpdated(stash_core::ids::ItemId, u32),
     Error(String),
 }
@@ -59,7 +59,7 @@ pub enum Command {
 #[derive(Debug, Clone)]
 pub struct App {
     pub screen: Screen,
-    pub items: Vec<stash_core::item::Item>,
+    pub items: Vec<stash_core::item::ItemWithStock>,
     pub selected: usize,
     pub input_mode: InputMode,
     pub status: Option<String>,
@@ -93,11 +93,11 @@ impl App {
                 self.items = items;
                 None
             }
-            Message::ItemSaved(item) => {
-                if let Some(existing) = self.items.iter_mut().find(|i| i.id == item.id) {
-                    *existing = item;
+            Message::ItemSaved(v) => {
+                if let Some(existing) = self.items.iter_mut().find(|i| i.item.id == v.item.id) {
+                    *existing = v;
                 } else {
-                    self.items.push(item);
+                    self.items.push(v);
                 }
                 self.screen = Screen::ItemList;
                 None
@@ -127,8 +127,8 @@ impl App {
                 None
             }
             (InputMode::Normal, KeyCode::Enter) => {
-                if let Some(item) = self.items.get(self.selected) {
-                    self.screen = Screen::ItemDetail(item.id);
+                if let Some(v) = self.items.get(self.selected) {
+                    self.screen = Screen::ItemDetail(v.item.id);
                 }
                 None
             }
