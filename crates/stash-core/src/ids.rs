@@ -1,76 +1,40 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, sqlx::Type)]
-#[sqlx(transparent)]
-pub struct ItemId(pub uuid::Uuid);
-impl Default for ItemId {
-    fn default() -> Self {
-        Self(uuid::Uuid::new_v4())
-    }
-}
-impl ItemId {
-    #[must_use]
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-impl From<ItemId> for String {
-    fn from(id: ItemId) -> Self {
-        id.0.to_string()
-    }
-}
-impl TryFrom<String> for ItemId {
-    type Error = uuid::Error;
-    fn try_from(s: String) -> Result<Self, Self::Error> {
-        Ok(Self(uuid::Uuid::parse_str(&s)?))
-    }
+use uuid::Uuid;
+
+macro_rules! define_id {
+    ($name:ident) => {
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, sqlx::Type)]
+        #[sqlx(transparent)]
+        pub struct $name(pub Uuid);
+
+        impl Default for $name {
+            fn default() -> Self {
+                Self(Uuid::new_v4())
+            }
+        }
+
+        impl $name {
+            #[must_use]
+            pub fn new() -> Self {
+                Self::default()
+            }
+        }
+
+        impl From<$name> for String {
+            fn from(id: $name) -> Self {
+                id.0.to_string()
+            }
+        }
+
+        impl TryFrom<String> for $name {
+            type Error = uuid::Error;
+            fn try_from(s: String) -> Result<Self, Self::Error> {
+                Ok(Self(Uuid::parse_str(&s)?))
+            }
+        }
+    };
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, sqlx::Type)]
-#[sqlx(transparent)]
-pub struct WarehouseId(pub uuid::Uuid);
-impl Default for WarehouseId {
-    fn default() -> Self {
-        Self(uuid::Uuid::new_v4())
-    }
-}
-impl WarehouseId {
-    #[must_use]
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-impl From<WarehouseId> for String {
-    fn from(id: WarehouseId) -> Self {
-        id.0.to_string()
-    }
-}
-impl TryFrom<String> for WarehouseId {
-    type Error = uuid::Error;
-    fn try_from(s: String) -> Result<Self, Self::Error> {
-        Ok(Self(uuid::Uuid::parse_str(&s)?))
-    }
-}
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, sqlx::Type)]
-#[sqlx(transparent)]
-pub struct CategoryId(pub uuid::Uuid);
-impl Default for CategoryId {
-    fn default() -> Self {
-        Self(uuid::Uuid::new_v4())
-    }
-}
-impl CategoryId {
-    #[must_use]
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-impl From<CategoryId> for String {
-    fn from(id: CategoryId) -> Self {
-        id.0.to_string()
-    }
-}
-impl TryFrom<String> for CategoryId {
-    type Error = uuid::Error;
-    fn try_from(s: String) -> Result<Self, Self::Error> {
-        Ok(Self(uuid::Uuid::parse_str(&s)?))
-    }
-}
+define_id!(ItemId);
+define_id!(CategoryId);
+define_id!(WarehouseId);
+define_id!(MovementId);
