@@ -8,4 +8,5 @@ license.workspace = true
 stash-core = { path = "../stash-core" }
 thiserror = { workspace = true }
 async-trait = "0.1.89"
-sqlx = { version = "0.9.0", features = ["sqlite", "uuid", "time", "macros"] }
+sqlx = { version = "0.9.0", features = ["runtime-tokio", "sqlite", "uuid", "time", "macros"] }
+tokio = { version = "1.52.3", features = ["rt-multi-thread", "macros", "time"] }

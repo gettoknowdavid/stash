@@ -4,7 +4,13 @@ use stash_core::ids::ItemId;
 use stash_core::item::{Item, ItemFilter};
 
 pub struct SqliteItemRepository {
-    pool: sqlx::sqlite::SqlitePool,
+    db: sqlx::sqlite::SqlitePool,
+}
+impl SqliteItemRepository {
+    #[must_use]
+    pub const fn new(db: sqlx::sqlite::SqlitePool) -> Self {
+        Self { db }
+    }
 }
 
 #[async_trait::async_trait]
@@ -25,7 +31,7 @@ impl ItemRepository for SqliteItemRepository {
             .bind(cat_str)
             .bind(input.unit_cost.0)
             .bind(i64::from(input.reorder_threshold))
-            .fetch_one(&self.pool)
+            .fetch_one(&self.db)
             .await?;
 
         Ok(row)
@@ -36,7 +42,7 @@ impl ItemRepository for SqliteItemRepository {
         let id_str: String = id.into();
         let row = sqlx::query_as::<_, Item>("SELECT * FROM items WHERE id = ?")
             .bind(id_str)
-            .fetch_optional(&self.pool)
+            .fetch_optional(&self.db)
             .await?;
         Ok(row)
     }
@@ -69,7 +75,7 @@ impl ItemRepository for SqliteItemRepository {
         qb.push(" LIMIT ").push_bind(i64::from(filter.limit));
         qb.push(" OFFSET ").push_bind(i64::from(filter.offset));
 
-        let rows = qb.build_query_as::<Item>().fetch_all(&self.pool).await?;
+        let rows = qb.build_query_as::<Item>().fetch_all(&self.db).await?;
         Ok(rows)
     }
 
@@ -95,7 +101,7 @@ impl ItemRepository for SqliteItemRepository {
         qb.push(" WHERE id = ").push_bind(id.0.to_string());
         qb.push(" RETURNING *");
 
-        let row = qb.build_query_as::<Item>().fetch_one(&self.pool).await?;
+        let row = qb.build_query_as::<Item>().fetch_one(&self.db).await?;
         Ok(row)
     }
 
@@ -103,7 +109,7 @@ impl ItemRepository for SqliteItemRepository {
     async fn delete(&self, id: ItemId) -> Result<(), StorageError> {
         sqlx::query("DELETE FROM items WHERE id = ?")
             .bind(id.0.to_string())
-            .execute(&self.pool)
+            .execute(&self.db)
             .await?;
         Ok(())
     }
