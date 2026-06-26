@@ -24,8 +24,10 @@ fn main() -> anyhow::Result<()> {
     std::thread::spawn(move || {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            spawn_storage_task(repo, cmd_rx, msg_tx);
-            std::future::pending::<()>().await; // keeps the runtime alive
+            let handle = tokio::spawn(async move {
+                spawn_storage_task(repo, cmd_rx, msg_tx).await;
+            });
+            let _ = handle.await;
         });
     });
 
