@@ -24,7 +24,7 @@ pub trait ItemRepository: Send + Sync {
     ///
     /// This function is part of a storage interface and is expected to persist
     /// the provided `NewItem` to the underlying datastore.
-    async fn create(&self, input: &CreateItemInput<'_>) -> Result<Item, StorageError>;
+    async fn create(&self, input: &CreateItemInput) -> Result<Item, StorageError>;
 
     /// Retrieves an item from the storage by its unique identifier.
     ///
@@ -94,11 +94,12 @@ pub trait ItemRepository: Send + Sync {
     async fn delete(&self, id: ItemId) -> Result<(), StorageError>;
 }
 
-pub struct CreateItemInput<'a> {
+#[derive(Clone, Debug)]
+pub struct CreateItemInput {
     pub id: ItemId,
     pub sku: Sku,
-    pub name: &'a str,
-    pub description: Option<&'a str>,
+    pub name: String,
+    pub description: Option<String>,
     pub category_id: CategoryId,
     pub unit_cost: Money,
     pub reorder_threshold: u32,

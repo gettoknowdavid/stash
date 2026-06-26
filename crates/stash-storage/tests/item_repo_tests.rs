@@ -26,8 +26,8 @@ async fn create_and_get_item() {
     let input = stash_storage::repository::CreateItemInput {
         id: stash_core::ids::ItemId::new(),
         sku: stash_core::sku::Sku::parse("SKU-001").unwrap(),
-        name: "Blue Tumbler",
-        description: Some("A nice blue tumbler with ornamental designs"),
+        name: "Blue Tumbler".to_string(),
+        description: Some("A nice blue tumbler with ornamental designs".to_string()),
         category_id,
         unit_cost: stash_core::money::Money(500),
         reorder_threshold: 10,
@@ -57,7 +57,7 @@ async fn update_item_changes_field_values() {
     let input = stash_storage::repository::CreateItemInput {
         id: stash_core::ids::ItemId::new(),
         sku: stash_core::sku::Sku::parse("SKU-002").unwrap(),
-        name: "Old Name",
+        name: "Old Name".to_string(),
         description: None,
         category_id,
         unit_cost: stash_core::money::Money(100),
@@ -86,7 +86,7 @@ async fn delete_removes_item() {
     let input = stash_storage::repository::CreateItemInput {
         id: stash_core::ids::ItemId::new(),
         sku: stash_core::sku::Sku::parse("SKU-003").unwrap(),
-        name: "To Delete",
+        name: "To Delete".to_string(),
         description: None,
         category_id,
         unit_cost: stash_core::money::Money(100),
@@ -108,7 +108,7 @@ async fn list_filters_by_search_text() {
         let input = stash_storage::repository::CreateItemInput {
             id: stash_core::ids::ItemId::new(),
             sku: stash_core::sku::Sku::parse(sku).unwrap(),
-            name,
+            name: name.to_string(),
             description: None,
             category_id,
             unit_cost: stash_core::money::Money(100),

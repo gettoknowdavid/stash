@@ -1,3 +1,6 @@
+pub mod app;
+pub mod ui;
+
 use anyhow::{Context, Result};
 
 fn main() -> Result<()> {

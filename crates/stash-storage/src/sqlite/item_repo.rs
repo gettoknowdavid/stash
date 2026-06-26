@@ -15,7 +15,7 @@ impl SqliteItemRepository {
 
 #[async_trait::async_trait]
 impl ItemRepository for SqliteItemRepository {
-    async fn create(&self, input: &CreateItemInput<'_>) -> Result<Item, StorageError> {
+    async fn create(&self, input: &CreateItemInput) -> Result<Item, StorageError> {
         let id_str: String = input.id.into();
         let cat_str: String = input.category_id.into();
 
@@ -26,8 +26,8 @@ impl ItemRepository for SqliteItemRepository {
         )
             .bind(id_str)
             .bind(&input.sku.0)
-            .bind(input.name)
-            .bind(input.description)
+            .bind(input.name.as_str())
+            .bind(input.description.as_deref())
             .bind(cat_str)
             .bind(input.unit_cost.0)
             .bind(i64::from(input.reorder_threshold))

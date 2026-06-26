@@ -112,7 +112,7 @@ impl ItemBuilder {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug, Clone)]
 pub struct ItemFilter {
     pub category_id: Option<CategoryId>,
     pub below_threshold_only: bool,
