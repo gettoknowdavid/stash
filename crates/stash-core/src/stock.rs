@@ -1,6 +1,7 @@
 use crate::ids::{ItemId, WarehouseId};
 use crate::CoreError;
 
+#[derive(Debug, Clone)]
 pub enum StockMovement {
     Inbound { qty: u32, reason: String },
     Outbound { qty: u32, reason: String },

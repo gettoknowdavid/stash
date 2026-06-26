@@ -2077,8 +2077,10 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "crossterm",
+ "ratatui",
  "stash-core",
  "stash-storage",
+ "tokio",
  "tui-input",
 ]
 

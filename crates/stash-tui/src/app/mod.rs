@@ -1,3 +1,5 @@
+pub mod bridge;
+
 #[derive(Debug, Clone)]
 pub enum Screen {
     Dashboard,
@@ -43,6 +45,7 @@ pub struct App {
     pub input_mode: InputMode,
     pub status: Option<String>,
     pub should_quit: bool,
+    pub movement_page: Vec<stash_core::stock::StockMovement>,
 }
 impl Default for App {
     fn default() -> Self {
@@ -59,6 +62,7 @@ impl App {
             input_mode: Default::default(),
             status: None,
             should_quit: false,
+            movement_page: Vec::new(),
         }
     }
 
