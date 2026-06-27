@@ -14,5 +14,5 @@ stash-storage = { path = "../stash-storage" }
 anyhow = { workspace = true }
 crossterm = "0.29.0"
 tokio = { version = "1.52.3", features = ["rt-multi-thread", "macros", "time"] }
-tui-input = "0.15.3"
+tui-input = { version = "0.15.3", features = ["crossterm", "ratatui", "ratatui-crossterm"] }
 ratatui = "0.30.2"

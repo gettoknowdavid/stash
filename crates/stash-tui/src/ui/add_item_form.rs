@@ -25,7 +25,7 @@ pub fn render(f: &mut ratatui::Frame, _app: &crate::app::App, form: &AddItemForm
         ])
         .split(area);
 
-    let fields = [(&form.sku, "SKU"), (&form.name, "Name"), (&form.unit_cost, "Unit Cost (kobo)")];
+    let fields = [(&form.sku, "SKU"), (&form.name, "Name"), (&form.unit_cost, "Unit Cost (₦)")];
 
     for (i, (input, label)) in fields.iter().enumerate() {
         let is_focused = i == form.focused_field;

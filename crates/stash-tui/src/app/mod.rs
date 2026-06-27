@@ -47,7 +47,9 @@ pub enum Message {
     ItemsLoaded(Vec<stash_core::item::ItemWithStock>),
     ItemSaved(stash_core::item::ItemWithStock),
     StockUpdated(stash_core::ids::ItemId, u32),
+    MovementsLoaded(Vec<stash_core::stock::StockMovementRecord>),
     Error(String),
+    None,
 }
 
 #[derive(Debug, Clone)]
@@ -55,6 +57,16 @@ pub enum Command {
     FetchItems(stash_core::item::ItemFilter),
     SaveItem(stash_storage::item_repository::CreateItemInput),
     DeleteItem(stash_core::ids::ItemId),
+    FetchMovements {
+        item_id: Option<stash_core::ids::ItemId>,
+        limit: u32,
+        offset: u32,
+    },
+    RecordMovement {
+        item_id: stash_core::ids::ItemId,
+        warehouse_id: stash_core::ids::WarehouseId,
+        movement: stash_core::stock::StockMovement,
+    },
     None,
 }
 
@@ -66,7 +78,7 @@ pub struct App {
     pub input_mode: InputMode,
     pub status: Option<String>,
     pub should_quit: bool,
-    pub movement_page: Vec<stash_core::stock::StockMovement>,
+    pub movement_page: Vec<stash_core::stock::StockMovementRecord>,
 }
 impl Default for App {
     fn default() -> Self {
@@ -105,13 +117,17 @@ impl App {
                 None
             }
             Message::StockUpdated(_, _) => None,
+            Message::MovementsLoaded(records) => {
+                self.movement_page = records;
+                None
+            }
             Message::Error(err) => {
                 self.status = Some(err);
                 None
             }
+            Message::None => None,
         }
     }
-
     pub fn handle_key(&mut self, key: crossterm::event::KeyEvent) -> Option<Command> {
         use crossterm::event::KeyCode;
         match (&self.input_mode, key.code) {
@@ -129,8 +145,8 @@ impl App {
                 None
             }
             (InputMode::Normal, KeyCode::Enter) => {
-                if let Some(v) = self.items.get(self.selected) {
-                    self.screen = Screen::ItemDetail(v.item.id);
+                if let Some(entry) = self.items.get(self.selected) {
+                    self.screen = Screen::ItemDetail(entry.item.id);
                 }
                 None
             }
@@ -162,14 +178,13 @@ impl App {
                         form.focused_field += 1;
                         return None;
                     }
-                    // last field — attempt submit
-                    return self.try_submit_add_item_form();
                 }
-                None
+                // last field, attempt to build + submit
+                self.try_submit_add_item_form()
             }
             (InputMode::Editing, _) => {
-                // route every other key (chars, backspace, arrows, home/end) into
-                // whichever field currently has focus
+                // every other key (chars, backspace, left/right arrows, home/end)
+                // gets routed into whichever field currently has focus
                 if let Screen::AddItem(form) = &mut self.screen {
                     let field = match form.focused_field {
                         0 => &mut form.sku,
@@ -185,6 +200,8 @@ impl App {
     }
     fn try_submit_add_item_form(&mut self) -> Option<Command> {
         let Screen::AddItem(form) = &mut self.screen else { return None };
+        form.error = None;
+
         let sku = match stash_core::sku::Sku::parse(form.sku.value()) {
             Ok(sku) => sku,
             Err(e) => {
@@ -192,18 +209,26 @@ impl App {
                 return None;
             }
         };
-        let unit_cost: i64 = match form.unit_cost.value().parse() {
+
+        if form.name.value().trim().is_empty() {
+            form.error = Some("name is required".into());
+            return None;
+        }
+
+        let unit_cost = match form.unit_cost.value().parse::<i64>() {
             Ok(v) => v,
             Err(_) => {
                 form.error = Some("unit cost must be a whole number (kobo)".into());
                 return None;
             }
         };
-        if form.name.value().trim().is_empty() {
-            form.error = Some("name is required".into());
-            return None;
-        }
-        let category_id = form.category_id?;
+
+        // placeholder — you don't have category selection in the form yet (see Epic 6/7 section).
+        // For now, hardcode a category_id or fetch the first one from self.categories once
+        // you've wired up Categories. This is the one piece that genuinely needs category support
+        // before this form can fully submit.
+        let category_id = stash_core::ids::CategoryId::new(); // TEMP — replace once categories exist
+
         let input = stash_storage::item_repository::CreateItemInput {
             id: stash_core::ids::ItemId::new(),
             sku,
@@ -213,6 +238,7 @@ impl App {
             unit_cost: stash_core::money::Money(unit_cost),
             reorder_threshold: 0,
         };
+
         Some(Command::SaveItem(input))
     }
 }

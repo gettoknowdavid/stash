@@ -3,7 +3,9 @@ use crate::app::{App, Command, Message};
 use crate::terminal::{init_panic_hook, init_terminal, restore_terminal};
 use stash_core::item::ItemFilter;
 use stash_storage::item_repository::ItemRepository;
+use stash_storage::movement_log_repository::MovementLogRepository;
 use stash_storage::sqlite::item_repo::ItemRepo;
+use stash_storage::sqlite::movement_log_repo::MovementLogRepo;
 use std::sync::Arc;
 
 pub mod app;
@@ -16,7 +18,8 @@ fn main() -> anyhow::Result<()> {
 
     let runtime = tokio::runtime::Runtime::new()?;
     let db = runtime.block_on(stash_storage::sqlite::connect("stash.db"))?;
-    let repo: Arc<dyn ItemRepository> = Arc::new(ItemRepo::new(db));
+    let item_repo: Arc<dyn ItemRepository> = Arc::new(ItemRepo::new(db.clone()));
+    let movement_repo: Arc<dyn MovementLogRepository> = Arc::new(MovementLogRepo::new(db));
 
     let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel::<Command>();
     let (msg_tx, mut msg_rx) = tokio::sync::mpsc::unbounded_channel::<Message>();
@@ -25,7 +28,7 @@ fn main() -> anyhow::Result<()> {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let handle = tokio::spawn(async move {
-                spawn_storage_task(repo, cmd_rx, msg_tx).await;
+                spawn_storage_task(item_repo, movement_repo, cmd_rx, msg_tx).await;
             });
             let _ = handle.await;
         });
