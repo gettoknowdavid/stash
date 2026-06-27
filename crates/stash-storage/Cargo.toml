@@ -10,3 +10,4 @@ thiserror = { workspace = true }
 async-trait = "0.1.89"
 sqlx = { version = "0.9.0", features = ["runtime-tokio", "sqlite", "uuid", "time", "macros", "derive"] }
 tokio = { version = "1.52.3", features = ["rt-multi-thread", "macros", "time"] }
+time = { workspace = true }

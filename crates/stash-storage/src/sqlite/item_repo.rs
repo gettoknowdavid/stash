@@ -1,12 +1,12 @@
-use crate::repository::{CreateItemInput, ItemRepository, UpdateItemInput};
+use crate::item_repository::{CreateItemInput, ItemRepository, UpdateItemInput};
 use crate::StorageError;
 use stash_core::ids::ItemId;
 use stash_core::item::{Item, ItemFilter, ItemWithStock};
 
-pub struct SqliteItemRepository {
+pub struct ItemRepo {
     db: sqlx::sqlite::SqlitePool,
 }
-impl SqliteItemRepository {
+impl ItemRepo {
     #[must_use]
     pub const fn new(db: sqlx::sqlite::SqlitePool) -> Self {
         Self { db }
@@ -14,25 +14,26 @@ impl SqliteItemRepository {
 }
 
 #[async_trait::async_trait]
-impl ItemRepository for SqliteItemRepository {
+impl ItemRepository for ItemRepo {
     async fn create(&self, input: &CreateItemInput) -> Result<Item, StorageError> {
         let id_str: String = input.id.into();
         let cat_str: String = input.category_id.into();
 
         let row = sqlx::query_as::<_, Item>(
-            r"INSERT INTO items (id, sku, name, description, category_id, unit_cost, reorder_threshold)
-              VALUES (?, ?, ?, ?, ?, ?, ?)
-              RETURNING *",
+            r"INSERT INTO
+            items (id, sku, name, description, category_id, unit_cost, reorder_threshold)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            RETURNING *",
         )
-            .bind(id_str)
-            .bind(&input.sku.0)
-            .bind(input.name.as_str())
-            .bind(input.description.as_deref())
-            .bind(cat_str)
-            .bind(input.unit_cost.0)
-            .bind(i64::from(input.reorder_threshold))
-            .fetch_one(&self.db)
-            .await?;
+        .bind(id_str)
+        .bind(&input.sku.0)
+        .bind(input.name.as_str())
+        .bind(input.description.as_deref())
+        .bind(cat_str)
+        .bind(input.unit_cost.0)
+        .bind(i64::from(input.reorder_threshold))
+        .fetch_one(&self.db)
+        .await?;
 
         Ok(row)
     }

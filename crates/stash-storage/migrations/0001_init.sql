@@ -26,7 +26,6 @@ CREATE TABLE items
     updated_at        TEXT             DEFAULT CURRENT_TIMESTAMP
 );
 
-
 CREATE TABLE stock_levels
 (
     item_id      TEXT    NOT NULL REFERENCES items (id),
@@ -36,10 +35,11 @@ CREATE TABLE stock_levels
 
 CREATE TABLE stock_movements
 (
-    id             TEXT PRIMARY KEY,
-    item_id        TEXT    NOT NULL REFERENCES items (id),
-    kind           TEXT    NOT NULL,
-    quantity_delta INTEGER NOT NULL,
-    reason         TEXT,
-    created_at     TEXT    NOT NULL
+    id           TEXT PRIMARY KEY,
+    item_id      TEXT    NOT NULL REFERENCES items (id),
+    warehouse_id TEXT    NOT NULL REFERENCES warehouses (id),
+    kind         TEXT    NOT NULL,
+    qty_delta    INTEGER NOT NULL,
+    reason       TEXT,
+    created_at   TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

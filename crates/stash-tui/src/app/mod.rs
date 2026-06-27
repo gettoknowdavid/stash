@@ -53,7 +53,7 @@ pub enum Message {
 #[derive(Debug, Clone)]
 pub enum Command {
     FetchItems(stash_core::item::ItemFilter),
-    SaveItem(stash_storage::repository::CreateItemInput),
+    SaveItem(stash_storage::item_repository::CreateItemInput),
     DeleteItem(stash_core::ids::ItemId),
     None,
 }
@@ -204,7 +204,7 @@ impl App {
             return None;
         }
         let category_id = form.category_id?;
-        let input = stash_storage::repository::CreateItemInput {
+        let input = stash_storage::item_repository::CreateItemInput {
             id: stash_core::ids::ItemId::new(),
             sku,
             name: form.name.value().to_string(),

@@ -2,6 +2,7 @@ use crate::StorageError;
 use std::str::FromStr;
 
 pub mod item_repo;
+pub mod movement_log_repo;
 
 ///
 /// Asynchronously establishes a connection to a `SQLite` database and applies any

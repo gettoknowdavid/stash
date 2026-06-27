@@ -9,6 +9,9 @@ pub enum CoreError {
 
     #[error("quantity overflow")]
     QuantityOverflow,
+
+    #[error("invalid movement kind: {0}")]
+    InvalidMovementKind(String),
 }
 
 #[derive(Debug, thiserror::Error)]

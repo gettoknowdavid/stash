@@ -1,7 +1,7 @@
 use stash_core::item::ItemWithStock;
 
 pub async fn spawn_storage_task(
-    repo: std::sync::Arc<dyn stash_storage::repository::ItemRepository>,
+    repo: std::sync::Arc<dyn stash_storage::item_repository::ItemRepository>,
     mut cmd_rx: tokio::sync::mpsc::UnboundedReceiver<crate::app::Command>,
     msg_tx: tokio::sync::mpsc::UnboundedSender<crate::app::Message>,
 ) {

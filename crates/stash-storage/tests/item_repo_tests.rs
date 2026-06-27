@@ -1,17 +1,17 @@
-use stash_storage::repository::ItemRepository;
+use stash_storage::item_repository::ItemRepository;
 
 async fn setup() -> sqlx::sqlite::SqlitePool {
-    let pool = sqlx::sqlite::SqlitePoolOptions::new().connect(":memory:").await.unwrap();
-    sqlx::migrate!("./migrations").run(&pool).await.unwrap();
-    pool
+    let db = sqlx::sqlite::SqlitePoolOptions::new().connect(":memory:").await.unwrap();
+    sqlx::migrate!("./migrations").run(&db).await.unwrap();
+    db
 }
 
-async fn seed_category(pool: &sqlx::sqlite::SqlitePool) -> stash_core::ids::CategoryId {
+async fn seed_category(db: &sqlx::sqlite::SqlitePool) -> stash_core::ids::CategoryId {
     let id = stash_core::ids::CategoryId::new();
     sqlx::query("INSERT INTO categories (id, name) VALUES (?, ?)")
         .bind(id.0.to_string())
         .bind("General")
-        .execute(pool)
+        .execute(db)
         .await
         .unwrap();
     id
@@ -21,9 +21,9 @@ async fn seed_category(pool: &sqlx::sqlite::SqlitePool) -> stash_core::ids::Cate
 async fn create_and_get_item() {
     let db = setup().await;
     let category_id = seed_category(&db).await;
-    let repo = stash_storage::sqlite::item_repo::SqliteItemRepository::new(db);
+    let repo = stash_storage::sqlite::item_repo::ItemRepo::new(db);
 
-    let input = stash_storage::repository::CreateItemInput {
+    let input = stash_storage::item_repository::CreateItemInput {
         id: stash_core::ids::ItemId::new(),
         sku: stash_core::sku::Sku::parse("SKU-001").unwrap(),
         name: "Blue Tumbler".to_string(),
@@ -43,7 +43,7 @@ async fn create_and_get_item() {
 #[tokio::test]
 async fn get_missing_item_returns_none() {
     let db = setup().await;
-    let repo = stash_storage::sqlite::item_repo::SqliteItemRepository::new(db);
+    let repo = stash_storage::sqlite::item_repo::ItemRepo::new(db);
     let result = repo.get(stash_core::ids::ItemId::new()).await.unwrap();
     assert!(result.is_none());
 }
@@ -52,9 +52,9 @@ async fn get_missing_item_returns_none() {
 async fn update_item_changes_field_values() {
     let db = setup().await;
     let category_id = seed_category(&db).await;
-    let repo = stash_storage::sqlite::item_repo::SqliteItemRepository::new(db);
+    let repo = stash_storage::sqlite::item_repo::ItemRepo::new(db);
 
-    let input = stash_storage::repository::CreateItemInput {
+    let input = stash_storage::item_repository::CreateItemInput {
         id: stash_core::ids::ItemId::new(),
         sku: stash_core::sku::Sku::parse("SKU-002").unwrap(),
         name: "Old Name".to_string(),
@@ -65,7 +65,7 @@ async fn update_item_changes_field_values() {
     };
     let created = repo.create(&input).await.unwrap();
 
-    let update = stash_storage::repository::UpdateItemInput {
+    let update = stash_storage::item_repository::UpdateItemInput {
         name: Some("New Name"),
         description: None,
         category_id: None,
@@ -81,9 +81,9 @@ async fn update_item_changes_field_values() {
 async fn delete_removes_item() {
     let pool = setup().await;
     let category_id = seed_category(&pool).await;
-    let repo = stash_storage::sqlite::item_repo::SqliteItemRepository::new(pool);
+    let repo = stash_storage::sqlite::item_repo::ItemRepo::new(pool);
 
-    let input = stash_storage::repository::CreateItemInput {
+    let input = stash_storage::item_repository::CreateItemInput {
         id: stash_core::ids::ItemId::new(),
         sku: stash_core::sku::Sku::parse("SKU-003").unwrap(),
         name: "To Delete".to_string(),
@@ -102,10 +102,10 @@ async fn delete_removes_item() {
 async fn list_filters_by_search_text() {
     let pool = setup().await;
     let category_id = seed_category(&pool).await;
-    let repo = stash_storage::sqlite::item_repo::SqliteItemRepository::new(pool);
+    let repo = stash_storage::sqlite::item_repo::ItemRepo::new(pool);
 
     for (sku, name) in [("SKU-010", "Red Widget"), ("SKU-011", "Blue Gadget")] {
-        let input = stash_storage::repository::CreateItemInput {
+        let input = stash_storage::item_repository::CreateItemInput {
             id: stash_core::ids::ItemId::new(),
             sku: stash_core::sku::Sku::parse(sku).unwrap(),
             name: name.to_string(),

@@ -2,8 +2,8 @@ use crate::app::bridge::spawn_storage_task;
 use crate::app::{App, Command, Message};
 use crate::terminal::{init_panic_hook, init_terminal, restore_terminal};
 use stash_core::item::ItemFilter;
-use stash_storage::repository::ItemRepository;
-use stash_storage::sqlite::item_repo::SqliteItemRepository;
+use stash_storage::item_repository::ItemRepository;
+use stash_storage::sqlite::item_repo::ItemRepo;
 use std::sync::Arc;
 
 pub mod app;
@@ -16,7 +16,7 @@ fn main() -> anyhow::Result<()> {
 
     let runtime = tokio::runtime::Runtime::new()?;
     let db = runtime.block_on(stash_storage::sqlite::connect("stash.db"))?;
-    let repo: Arc<dyn ItemRepository> = Arc::new(SqliteItemRepository::new(db));
+    let repo: Arc<dyn ItemRepository> = Arc::new(ItemRepo::new(db));
 
     let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel::<Command>();
     let (msg_tx, mut msg_rx) = tokio::sync::mpsc::unbounded_channel::<Message>();
