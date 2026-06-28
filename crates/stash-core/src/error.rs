@@ -24,6 +24,12 @@ pub enum ValidationError {
 
     #[error("invalid SKU length: {0}")]
     InvalidSkuLength(usize),
+
+    #[error("invalid warehouse name length: {0}")]
+    InvalidWarehouseNameLength(usize),
+
+    #[error("invalid category name length: {0}")]
+    InvalidCategoryNameLength(usize),
 }
 
 #[cfg(test)]

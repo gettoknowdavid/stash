@@ -11,6 +11,7 @@ pub mod item;
 pub mod money;
 pub mod sku;
 pub mod stock;
+pub mod warehouse;
 
 pub use error::CoreError;
 pub use error::ValidationError;

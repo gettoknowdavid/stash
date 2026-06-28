@@ -1,16 +1,15 @@
 #[derive(sqlx::FromRow)]
-pub struct Category {
-    pub id: crate::ids::CategoryId,
-    pub name: CategoryName,
-    pub description: Option<String>,
-    pub created_at: time::OffsetDateTime,
+pub struct Warehouse {
+    pub id: crate::ids::WarehouseId,
+    pub name: WarehouseName,
+    pub location: Option<String>,
 }
 
 #[derive(Debug, Clone, sqlx::Type)]
 #[sqlx(transparent)]
-pub struct CategoryName(pub String);
-impl CategoryName {
-    /// Parses a raw string into a validated category name object.
+pub struct WarehouseName(pub String);
+impl WarehouseName {
+    /// Parses a raw string into a validated warehouse name object.
     ///
     /// # Parameters
     /// - `raw`: A string slice representing the raw input.
@@ -25,22 +24,22 @@ impl CategoryName {
     ///
     /// # Errors
     /// This function returns the following validation errors:
-    /// - `ValidationError::InvalidCategoryNameLength`: If the input length is not within
+    /// - `ValidationError::InvalidWarehouseNameLength`: If the input length is not within
     ///   the valid range.
     pub fn parse(raw: &str) -> Result<Self, crate::ValidationError> {
         if raw.len() < 3 || raw.len() > 200 {
-            return Err(crate::ValidationError::InvalidCategoryNameLength(raw.len()));
+            return Err(crate::ValidationError::InvalidWarehouseNameLength(raw.len()));
         }
 
         Ok(Self(raw.to_string()))
     }
 }
-impl From<CategoryName> for String {
-    fn from(raw: CategoryName) -> Self {
+impl From<WarehouseName> for String {
+    fn from(raw: WarehouseName) -> Self {
         raw.0
     }
 }
-impl TryFrom<String> for CategoryName {
+impl TryFrom<String> for WarehouseName {
     type Error = crate::ValidationError;
     fn try_from(raw: String) -> Result<Self, Self::Error> {
         Self::parse(&raw)

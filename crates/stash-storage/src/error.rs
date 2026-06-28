@@ -4,6 +4,12 @@ pub enum StorageError {
     #[error("item not found: {0:?}")]
     NotFound(stash_core::ids::ItemId),
 
+    #[error("Category is still in use: {0:?}")]
+    CategoryInUse(stash_core::ids::CategoryId),
+
+    #[error("Warehouse still has items in it: {0:?}")]
+    WarehouseInUse(stash_core::ids::WarehouseId),
+
     #[error("database error: {0}")]
     Database(#[from] sqlx::Error),
 
