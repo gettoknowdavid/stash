@@ -388,6 +388,13 @@ impl App {
                 None
             }
             Message::Error(err) => {
+                match &mut self.screen {
+                    Screen::AddItem(form) => form.error = Some(err.clone()),
+                    Screen::AddCategory(form) => form.error = Some(err.clone()),
+                    Screen::AddWarehouse(form) => form.error = Some(err.clone()),
+                    Screen::ItemDetail(_) => self.item_detail.error = Some(err.clone()),
+                    _ => {}
+                }
                 self.status = Some(err);
                 None
             }
@@ -620,6 +627,10 @@ impl App {
             }
             KeyCode::Tab => {
                 if let Screen::AddItem(form) = &mut self.screen {
+                    if form.focused_field == 1 && form.sku.value().trim().is_empty() {
+                        let suggestion = stash_core::sku::Sku::suggest_from_name(form.name.value());
+                        form.sku = tui_input::Input::new(suggestion);
+                    }
                     form.focused_field = (form.focused_field + 1) % 4;
                 }
                 None

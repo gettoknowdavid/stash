@@ -38,6 +38,26 @@ impl Sku {
 
         Ok(Self(raw.to_uppercase()))
     }
+
+    /// Suggests a SKU by slugifying a name. This is a *suggestion*, not a guarantee
+    /// of uniqueness — the DB unique constraint (and the form's error path)
+    /// still has final say.
+    #[must_use]
+    pub fn suggest_from_name(name: &str) -> String {
+        let mut slug: String = name
+            .chars()
+            .map(|c| if c.is_ascii_alphanumeric() { c.to_ascii_uppercase() } else { '-' })
+            .collect();
+        while slug.contains("--") {
+            slug = slug.replace("--", "-");
+        }
+        let mut slug = slug.trim_matches('-').to_string();
+        if slug.len() < 3 {
+            slug.push_str("-ITM");
+        }
+        slug.truncate(20);
+        slug
+    }
 }
 impl From<Sku> for String {
     fn from(raw: Sku) -> Self {
