@@ -160,6 +160,14 @@ impl AdjustKind {
         }
     }
 
+    const fn previous(self) -> Self {
+        match self {
+            Self::Inbound => Self::Adjustment,
+            Self::Outbound => Self::Inbound,
+            Self::Adjustment => Self::Outbound,
+        }
+    }
+
     pub const fn label(self) -> &'static str {
         match self {
             Self::Inbound => "Inbound (+)",
@@ -753,7 +761,11 @@ impl App {
                 self.screen = Screen::ItemList;
                 None
             }
-            KeyCode::Tab => {
+            KeyCode::Left => {
+                self.item_detail.kind = self.item_detail.kind.previous();
+                None
+            }
+            KeyCode::Right => {
                 self.item_detail.kind = self.item_detail.kind.next();
                 None
             }
