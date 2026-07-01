@@ -16,3 +16,4 @@ crossterm = "0.29.0"
 tokio = { version = "1.52.3", features = ["rt-multi-thread", "macros", "time"] }
 tui-input = { version = "0.15.3", features = ["crossterm", "ratatui", "ratatui-crossterm"] }
 ratatui = "0.30.2"
+fuzzy-matcher = "0.3.7"

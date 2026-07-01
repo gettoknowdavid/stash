@@ -3,9 +3,10 @@ use std::sync::Arc;
 
 pub async fn spawn_storage_task(
     item_repo: Arc<dyn stash_storage::item_repository::ItemRepository>,
+    movement_repo: Arc<dyn stash_storage::movement_log_repository::MovementLogRepository>,
+    stock_repo: Arc<dyn stash_storage::stock_repository::StockRepository>,
     category_repo: Arc<dyn stash_storage::category_repository::CategoryRepository>,
     warehouse_repo: Arc<dyn stash_storage::warehouse_repository::WarehouseRepository>,
-    movement_repo: Arc<dyn stash_storage::movement_log_repository::MovementLogRepository>,
     mut cmd_rx: tokio::sync::mpsc::UnboundedReceiver<Command>,
     msg_tx: tokio::sync::mpsc::UnboundedSender<Message>,
 ) {
@@ -24,7 +25,7 @@ pub async fn spawn_storage_task(
                 Err(e) => Message::Error(e.to_string()),
             },
             Command::DeleteItem(id) => match item_repo.delete(id).await {
-                Ok(()) => Message::ItemsLoaded(vec![]),
+                Ok(()) => Message::ItemDeleted(id),
                 Err(e) => Message::Error(e.to_string()),
             },
             Command::FetchCategories => match category_repo.list().await {
@@ -40,7 +41,7 @@ pub async fn spawn_storage_task(
                 Err(e) => Message::Error(e.to_string()),
             },
             Command::DeleteCategory(id) => match category_repo.delete(id).await {
-                Ok(()) => Message::CategoriesLoaded(vec![]),
+                Ok(()) => Message::CategoryDeleted(id),
                 Err(e) => Message::Error(e.to_string()),
             },
             Command::FetchWarehouses => match warehouse_repo.list().await {
@@ -56,7 +57,7 @@ pub async fn spawn_storage_task(
                 Err(e) => Message::Error(e.to_string()),
             },
             Command::DeleteWarehouse(id) => match warehouse_repo.delete(id).await {
-                Ok(()) => Message::WarehousesLoaded(vec![]),
+                Ok(()) => Message::WarehouseDeleted(id),
                 Err(e) => Message::Error(e.to_string()),
             },
             Command::FetchMovements { item_id, limit, offset } => {
@@ -70,8 +71,8 @@ pub async fn spawn_storage_task(
                 }
             }
             Command::RecordMovement { item_id, warehouse_id, movement } => {
-                match movement_repo.record(item_id, warehouse_id, &movement).await {
-                    Ok(_) => Message::None,
+                match stock_repo.apply_movement(item_id, warehouse_id, &movement).await {
+                    Ok(level) => Message::StockUpdated(item_id, level.quantity),
                     Err(e) => Message::Error(e.to_string()),
                 }
             }
