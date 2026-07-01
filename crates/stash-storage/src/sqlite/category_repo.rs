@@ -39,9 +39,8 @@ impl crate::category_repository::CategoryRepository for CategoryRepo {
             .map_err(StorageError::Database)
     }
 
-    //noinspection ALL
     async fn list(&self) -> Result<Vec<Category>, StorageError> {
-        sqlx::query_as::<_, Category>(r"SELECT * FROM categories WHERE 1 = 1")
+        sqlx::query_as::<_, Category>(r"SELECT * FROM categories")
             .fetch_all(&self.db)
             .await
             .map_err(StorageError::Database)

@@ -39,9 +39,8 @@ impl crate::warehouse_repository::WarehouseRepository for WarehouseRepo {
             .map_err(StorageError::Database)
     }
 
-    //noinspection ALL
     async fn list(&self) -> Result<Vec<Warehouse>, StorageError> {
-        sqlx::query_as::<_, Warehouse>(r"SELECT * FROM warehouses WHERE 1 = 1")
+        sqlx::query_as::<_, Warehouse>(r"SELECT * FROM warehouses")
             .fetch_all(&self.db)
             .await
             .map_err(StorageError::Database)
