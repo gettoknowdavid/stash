@@ -12,6 +12,7 @@ pub mod popup;
 pub mod settings;
 pub mod sidebar;
 pub mod statusbar;
+pub mod title;
 pub mod warehouse_detail;
 pub mod warehouse_form;
 pub mod warehouse_list;
@@ -21,10 +22,17 @@ pub fn render(f: &mut ratatui::Frame, app: &crate::app::App) {
 
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Min(0), Constraint::Length(1)])
+        .constraints([
+            Constraint::Length(1),
+            Constraint::Length(1),
+            Constraint::Min(0),
+            Constraint::Length(1),
+        ])
         .split(f.area());
 
-    let (content, status) = (chunks[0], chunks[1]);
+    let (title, content, status) = (chunks[1], chunks[2], chunks[3]);
+
+    title::render(f, app, title);
 
     let body = Layout::default()
         .direction(Direction::Horizontal)

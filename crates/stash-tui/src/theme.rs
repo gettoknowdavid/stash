@@ -4,6 +4,7 @@ use ratatui::style::{Color, Modifier, Style};
 pub struct Theme {
     pub border: Color,
     pub border_focused: Color,
+    pub title: Color,
     pub error: Color,
     pub selected: Style,
     pub low_stock: Style,
@@ -15,6 +16,7 @@ impl Theme {
         Self {
             border: Color::White,
             border_focused: Color::Yellow,
+            title: Color::LightCyan,
             error: Color::Red,
             selected: Style::default().bg(Color::LightBlue),
             low_stock: Style::default().bg(Color::Red),
@@ -26,6 +28,7 @@ impl Theme {
         Self {
             border: Color::Black,
             border_focused: Color::Blue,
+            title: Color::Cyan,
             selected: Style::default().bg(Color::LightBlue),
             low_stock: Style::default().fg(Color::Red),
             ok_stock: Style::default().fg(Color::DarkGray),
