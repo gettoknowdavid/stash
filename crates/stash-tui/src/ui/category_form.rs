@@ -1,9 +1,8 @@
-use crate::app::CategoryFormState;
-use ratatui::layout::{Constraint, Direction, Layout};
+use crate::app::{App, CategoryFormState};
+use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::widgets::{Block, Borders, Paragraph};
 
-pub fn render(f: &mut ratatui::Frame, app: &crate::app::App, form: &CategoryFormState) {
-    let area = f.area();
+pub fn render(f: &mut ratatui::Frame, app: &App, form: &CategoryFormState, area: Rect) {
     let rows = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Length(3), Constraint::Length(3), Constraint::Min(0)])

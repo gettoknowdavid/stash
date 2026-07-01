@@ -1,12 +1,12 @@
-use ratatui::layout::{Constraint, Direction, Layout};
+use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::style::{Modifier, Style};
 use ratatui::widgets::{Block, Borders, Cell, Paragraph, Row, Table};
 
-pub fn render(f: &mut ratatui::Frame, app: &crate::app::App) {
+pub fn render(f: &mut ratatui::Frame, app: &crate::app::App, area: Rect) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Length(3), Constraint::Min(0)])
-        .split(f.area());
+        .split(area);
 
     let search_title = if app.input_mode == crate::app::InputMode::Searching {
         "Search (Esc to clear, Enter to lock in)"

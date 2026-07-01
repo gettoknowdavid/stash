@@ -1,7 +1,8 @@
+use ratatui::layout::Rect;
 use ratatui::style::{Modifier, Style};
 use ratatui::widgets::{Block, Borders, List, ListItem};
 
-pub fn render(f: &mut ratatui::Frame, app: &crate::app::App) {
+pub fn render(f: &mut ratatui::Frame, app: &crate::app::App, area: Rect) {
     let items: Vec<ListItem> = app
         .warehouses
         .iter()
@@ -21,6 +22,6 @@ pub fn render(f: &mut ratatui::Frame, app: &crate::app::App) {
         List::new(items).block(
             Block::default().title("Warehouses (n: new, Enter: view)").borders(Borders::ALL),
         ),
-        f.area(),
+        area,
     );
 }

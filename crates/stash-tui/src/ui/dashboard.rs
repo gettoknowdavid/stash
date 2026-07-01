@@ -1,9 +1,7 @@
-use ratatui::layout::{Constraint, Direction, Layout};
+use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::widgets::{Block, Borders, Paragraph, Sparkline};
 
-pub fn render(f: &mut ratatui::Frame, app: &crate::app::App) {
-    let area = f.area();
-
+pub fn render(f: &mut ratatui::Frame, app: &crate::app::App, area: Rect) {
     let rows = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Length(3), Constraint::Length(5), Constraint::Min(3)])

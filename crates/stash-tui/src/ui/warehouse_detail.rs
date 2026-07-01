@@ -1,6 +1,8 @@
+use ratatui::layout::Rect;
 use ratatui::widgets::{Block, Borders, Paragraph};
+use stash_core::ids::WarehouseId;
 
-pub fn render(f: &mut ratatui::Frame, app: &crate::app::App, id: stash_core::ids::WarehouseId) {
+pub fn render(f: &mut ratatui::Frame, app: &crate::app::App, id: WarehouseId, area: Rect) {
     let Some(w) = app.warehouses.iter().find(|w| w.id == id) else {
         f.render_widget(Paragraph::new("Warehouse not found"), f.area());
         return;
@@ -14,6 +16,6 @@ pub fn render(f: &mut ratatui::Frame, app: &crate::app::App, id: stash_core::ids
     f.render_widget(
         Paragraph::new(body)
             .block(Block::default().title("Warehouse Detail").borders(Borders::ALL)),
-        f.area(),
+        area,
     );
 }

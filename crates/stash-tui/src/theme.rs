@@ -19,7 +19,7 @@ impl Theme {
             selected: Style::default().bg(Color::LightBlue),
             low_stock: Style::default().bg(Color::Red),
             ok_stock: Style::default().bg(Color::DarkGray),
-            status_bar: Style::default().fg(Color::DarkGray).add_modifier(Modifier::ITALIC),
+            status_bar: Style::default().fg(Color::Gray).add_modifier(Modifier::ITALIC),
         }
     }
     pub fn light() -> Self {

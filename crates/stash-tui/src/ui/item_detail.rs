@@ -1,10 +1,9 @@
-use ratatui::layout::{Constraint, Direction, Layout};
-use ratatui::style::{Color, Style};
+use crate::app::App;
+use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::widgets::{Block, Borders, List, ListItem, Paragraph};
+use stash_core::ids::ItemId;
 
-pub fn render(f: &mut ratatui::Frame, app: &crate::app::App, item_id: stash_core::ids::ItemId) {
-    let area = f.area();
-
+pub fn render(f: &mut ratatui::Frame, app: &App, item_id: ItemId, area: Rect) {
     let Some(entry) = app.items.iter().find(|e| e.item.id == item_id) else {
         f.render_widget(
             Paragraph::new("Item not found").block(Block::default().borders(Borders::ALL)),

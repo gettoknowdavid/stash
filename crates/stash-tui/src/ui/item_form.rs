@@ -1,9 +1,10 @@
-pub fn render(f: &mut ratatui::Frame, app: &crate::app::App, form: &crate::app::ItemFormState) {
+use crate::app::{App, ItemFormState};
+use ratatui::layout::Rect;
+
+pub fn render(f: &mut ratatui::Frame, app: &App, form: &ItemFormState, area: Rect) {
     use ratatui::layout::{Constraint, Direction, Layout};
     use ratatui::style::{Color, Style};
     use ratatui::widgets::{Block, Borders, Paragraph};
-
-    let area = f.area();
 
     let rows = Layout::default()
         .direction(Direction::Vertical)

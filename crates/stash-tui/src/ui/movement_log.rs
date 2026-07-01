@@ -1,6 +1,7 @@
+use ratatui::layout::Rect;
 use ratatui::widgets::{Block, Borders, List, ListItem};
 
-pub fn render(f: &mut ratatui::Frame, app: &crate::app::App) {
+pub fn render(f: &mut ratatui::Frame, app: &crate::app::App, area: Rect) {
     let items: Vec<ListItem> = app
         .movement_page
         .iter()
@@ -17,6 +18,6 @@ pub fn render(f: &mut ratatui::Frame, app: &crate::app::App) {
 
     f.render_widget(
         List::new(items).block(Block::default().title("Movements").borders(Borders::ALL)),
-        f.area(),
+        area,
     );
 }

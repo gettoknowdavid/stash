@@ -1,9 +1,8 @@
 use crate::app::{App, WarehouseFormState};
-use ratatui::layout::{Constraint, Direction, Layout};
+use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::widgets::{Block, Borders, Paragraph};
 
-pub fn render(f: &mut ratatui::Frame, app: &App, form: &WarehouseFormState) {
-    let area = f.area();
+pub fn render(f: &mut ratatui::Frame, app: &App, form: &WarehouseFormState, area: Rect) {
     let rows = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Length(3), Constraint::Length(3), Constraint::Min(0)])
