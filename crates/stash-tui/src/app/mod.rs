@@ -705,7 +705,13 @@ impl App {
                         let suggestion = stash_core::sku::Sku::suggest_from_name(form.name.value());
                         form.sku = tui_input::Input::new(suggestion);
                     }
-                    form.focused_field = (form.focused_field + 1) % 4;
+                    let editing = form.editing_id.is_some();
+                    loop {
+                        form.focused_field = (form.focused_field + 1) % 4;
+                        if !(editing && form.focused_field == 0) {
+                            break;
+                        }
+                    }
                 }
                 None
             }
@@ -740,7 +746,8 @@ impl App {
             }
             _ => {
                 if let Screen::AddItem(form) = &mut self.screen {
-                    if form.focused_field != 3 {
+                    let editing = form.editing_id.is_some();
+                    if form.focused_field != 3 && !(editing && form.focused_field == 0) {
                         let field = match form.focused_field {
                             0 => &mut form.sku,
                             1 => &mut form.name,
@@ -896,14 +903,6 @@ impl App {
         let Screen::AddItem(form) = &mut self.screen else { return None };
         form.error = None;
 
-        let sku = match stash_core::sku::Sku::parse(form.sku.value()) {
-            Ok(sku) => sku,
-            Err(e) => {
-                form.error = Some(e.to_string());
-                return None;
-            }
-        };
-
         if form.name.value().trim().is_empty() {
             form.error = Some("name is required".into());
             return None;
@@ -922,7 +921,28 @@ impl App {
             return None;
         };
 
-        let input = stash_storage::item_repository::CreateItemInput {
+        // EDIT PATH — sku is immutable, so it's simply not part of the update.
+        if let Some(id) = form.editing_id {
+            return Some(Command::UpdateItem(stash_storage::item_repository::UpdateItemInput {
+                id,
+                name: Some(form.name.value().to_string()),
+                description: None,
+                category_id: Some(category.id),
+                unit_cost: Some(stash_core::money::Money(unit_cost)),
+                reorder_threshold: None,
+            }));
+        }
+
+        // CREATE PATH — sku is required and validated here only.
+        let sku = match stash_core::sku::Sku::parse(form.sku.value()) {
+            Ok(sku) => sku,
+            Err(e) => {
+                form.error = Some(e.to_string());
+                return None;
+            }
+        };
+
+        Some(Command::SaveItem(stash_storage::item_repository::CreateItemInput {
             id: ItemId::new(),
             sku,
             name: form.name.value().to_string(),
@@ -930,9 +950,7 @@ impl App {
             category_id: category.id,
             unit_cost: stash_core::money::Money(unit_cost),
             reorder_threshold: 0,
-        };
-
-        Some(Command::SaveItem(input))
+        }))
     }
     fn try_submit_category_form(&mut self) -> Option<Command> {
         let Screen::AddCategory(form) = &mut self.screen else { return None };
