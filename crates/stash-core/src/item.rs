@@ -35,17 +35,27 @@ impl<'r> sqlx::FromRow<'r, sqlx::sqlite::SqliteRow> for Item {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Debug, Clone)]
 pub struct ItemFilter {
     pub category_id: Option<CategoryId>,
     pub below_threshold_only: bool,
     pub search_text: Option<String>,
     pub sku_prefix: Option<String>,
-
     pub limit: u32,
     pub offset: u32,
 }
-
+impl Default for ItemFilter {
+    fn default() -> Self {
+        Self {
+            category_id: None,
+            below_threshold_only: false,
+            search_text: None,
+            sku_prefix: None,
+            limit: 500,
+            offset: 0,
+        }
+    }
+}
 #[derive(Clone, Debug)]
 pub struct ItemWithStock {
     pub item: Item,

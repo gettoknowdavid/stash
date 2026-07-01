@@ -75,7 +75,7 @@ impl ItemRepository for ItemRepo {
             qb.push(" HAVING total_quantity < items.reorder_threshold");
         }
 
-        qb.push(" LIMIT ").push_bind(i64::from(filter.limit));
+        qb.push(" LIMIT ").push_bind(i64::from(filter.limit.max(1)));
         qb.push(" OFFSET ").push_bind(i64::from(filter.offset));
 
         let rows = qb.build_query_as::<ItemWithStock>().fetch_all(&self.db).await?;
