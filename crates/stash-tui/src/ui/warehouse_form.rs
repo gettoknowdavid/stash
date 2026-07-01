@@ -1,8 +1,8 @@
+use crate::app::{App, WarehouseFormState};
 use ratatui::layout::{Constraint, Direction, Layout};
-use ratatui::style::{Color, Style};
 use ratatui::widgets::{Block, Borders, Paragraph};
 
-pub fn render(f: &mut ratatui::Frame, form: &crate::app::WarehouseFormState) {
+pub fn render(f: &mut ratatui::Frame, app: &App, form: &WarehouseFormState) {
     let area = f.area();
     let rows = Layout::default()
         .direction(Direction::Vertical)
@@ -17,7 +17,7 @@ pub fn render(f: &mut ratatui::Frame, form: &crate::app::WarehouseFormState) {
         let block = Block::default()
             .title(if i == 0 { title } else { label })
             .borders(Borders::ALL)
-            .style(Style::default().fg(if focused { Color::Yellow } else { Color::White }));
+            .style(app.theme.border_style(focused));
         f.render_widget(Paragraph::new(input.value()).block(block), rows[i]);
         if focused {
             f.set_cursor_position((rows[i].x + 1 + input.cursor() as u16, rows[i].y + 1));
@@ -25,9 +25,6 @@ pub fn render(f: &mut ratatui::Frame, form: &crate::app::WarehouseFormState) {
     }
 
     if let Some(err) = &form.error {
-        f.render_widget(
-            Paragraph::new(err.as_str()).style(Style::default().fg(Color::Red)),
-            rows[2],
-        );
+        f.render_widget(Paragraph::new(err.as_str()).style(app.theme.error), rows[2]);
     }
 }

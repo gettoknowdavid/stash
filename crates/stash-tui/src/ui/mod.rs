@@ -8,6 +8,7 @@ pub mod item_list;
 pub mod movement_log;
 pub mod popup;
 pub mod settings;
+pub mod statusbar;
 pub mod warehouse_detail;
 pub mod warehouse_form;
 pub mod warehouse_list;
@@ -20,10 +21,10 @@ pub fn render(f: &mut ratatui::Frame, app: &crate::app::App) {
         crate::app::Screen::AddItem(form) => item_form::render(f, app, form),
         crate::app::Screen::CategoryList => category_list::render(f, app),
         crate::app::Screen::CategoryDetail(id) => category_detail::render(f, app, *id),
-        crate::app::Screen::AddCategory(form) => category_form::render(f, form),
+        crate::app::Screen::AddCategory(form) => category_form::render(f, app, form),
         crate::app::Screen::WarehouseList => warehouse_list::render(f, app),
         crate::app::Screen::WarehouseDetail(id) => warehouse_detail::render(f, app, *id),
-        crate::app::Screen::AddWarehouse(form) => warehouse_form::render(f, form),
+        crate::app::Screen::AddWarehouse(form) => warehouse_form::render(f, app, form),
         crate::app::Screen::StockMovementLog => movement_log::render(f, app),
         crate::app::Screen::Settings => settings::render(f, app),
     }

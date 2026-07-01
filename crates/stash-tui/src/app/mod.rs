@@ -1,3 +1,4 @@
+use crate::theme::Theme;
 use crossterm::event::KeyEvent;
 use stash_core::category::Category;
 use stash_core::ids::{CategoryId, ItemId, WarehouseId};
@@ -234,6 +235,7 @@ pub struct App {
     pub search_input: tui_input::Input,
     pub filtered: Vec<usize>,
     pub keymap: KeyMap,
+    pub theme: Theme,
 }
 impl Default for App {
     fn default() -> Self {
@@ -261,6 +263,7 @@ impl App {
             search_input: tui_input::Input::default(),
             filtered: Vec::new(),
             keymap: KeyMap::default(),
+            theme: Theme::dark(),
         }
     }
 

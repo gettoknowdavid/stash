@@ -52,8 +52,7 @@ pub fn render(f: &mut ratatui::Frame, app: &crate::app::App, item_id: stash_core
     let mut help_lines =
         vec![ListItem::new("Enter: submit  Tab: change kind  d: delete  Esc: back")];
     if let Some(err) = &app.item_detail.error {
-        help_lines
-            .push(ListItem::new(format!("Error: {err}")).style(Style::default().fg(Color::Red)));
+        help_lines.push(ListItem::new(format!("Error: {err}")).style(app.theme.error));
     }
     f.render_widget(List::new(help_lines), rows[2]);
 }

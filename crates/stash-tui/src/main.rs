@@ -19,6 +19,7 @@ use std::sync::Arc;
 
 pub mod app;
 pub mod terminal;
+pub mod theme;
 pub mod ui;
 
 /// First-run convenience: an inventory app with zero categories or warehouses can't do

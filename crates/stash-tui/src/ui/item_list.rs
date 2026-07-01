@@ -1,5 +1,4 @@
 use ratatui::layout::{Constraint, Direction, Layout};
-use ratatui::prelude::Color;
 use ratatui::style::{Modifier, Style};
 use ratatui::widgets::{Block, Borders, Cell, Paragraph, Row, Table};
 
@@ -31,11 +30,11 @@ pub fn render(f: &mut ratatui::Frame, app: &crate::app::App) {
             let entry = app.items.get(item_idx)?;
             let below = entry.qty < entry.item.reorder_threshold;
             let style = if below {
-                Style::default().fg(Color::Red)
+                app.theme.low_stock
             } else if visual_idx == app.item_selected {
-                Style::default().bg(Color::Blue)
+                app.theme.selected
             } else {
-                Style::default()
+                app.theme.ok_stock
             };
 
             Some(
