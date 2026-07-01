@@ -9,6 +9,16 @@ use tui_input::backend::crossterm::EventHandler;
 
 pub mod bridge;
 
+pub const SECTIONS: [&str; 6] =
+    ["Dashboard", "Items", "Categories", "Warehouses", "Movements", "Settings"];
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Pane {
+    Sidebar,
+    #[default]
+    Content,
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct ItemFormState {
     pub sku: tui_input::Input,
@@ -236,6 +246,8 @@ pub struct App {
     pub filtered: Vec<usize>,
     pub keymap: KeyMap,
     pub theme: Theme,
+    pub focused_pane: Pane,
+    pub sidebar_selected: usize,
 }
 impl Default for App {
     fn default() -> Self {
@@ -264,6 +276,8 @@ impl App {
             filtered: Vec::new(),
             keymap: KeyMap::default(),
             theme: Theme::dark(),
+            focused_pane: Pane::default(),
+            sidebar_selected: 0,
         }
     }
 
@@ -413,30 +427,67 @@ impl App {
             match key.code {
                 KeyCode::Char('1') => {
                     self.screen = Screen::Dashboard;
+                    self.sidebar_selected = 0;
                     return None;
                 }
                 KeyCode::Char('2') => {
                     self.screen = Screen::ItemList;
+                    self.sidebar_selected = 1;
                     return None;
                 }
                 KeyCode::Char('3') => {
                     self.screen = Screen::CategoryList;
+                    self.sidebar_selected = 2;
                     return None;
                 }
                 KeyCode::Char('4') => {
                     self.screen = Screen::WarehouseList;
+                    self.sidebar_selected = 3;
                     return None;
                 }
                 KeyCode::Char('5') => {
                     self.screen = Screen::StockMovementLog;
+                    self.sidebar_selected = 4;
                     return Some(Command::FetchMovements { item_id: None, limit: 20, offset: 0 });
                 }
                 KeyCode::Char('6') => {
                     self.screen = Screen::Settings;
+                    self.sidebar_selected = 5;
+                    return None;
+                }
+                KeyCode::Tab => {
+                    self.focused_pane = match self.focused_pane {
+                        Pane::Sidebar => Pane::Content,
+                        Pane::Content => Pane::Sidebar,
+                    };
                     return None;
                 }
                 _ => {}
             }
+        }
+
+        if self.focused_pane == Pane::Sidebar {
+            let action = self.keymap.resolve(key)?;
+            return match action {
+                Action::Quit => {
+                    self.should_quit = true;
+                    None
+                }
+                Action::MoveUp => {
+                    self.sidebar_selected = self.sidebar_selected.saturating_sub(1);
+                    self.screen = self.screen_from_selected_sidebar(self.sidebar_selected);
+                    None
+                }
+                Action::MoveDown => {
+                    self.sidebar_selected = self
+                        .sidebar_selected
+                        .saturating_add(1)
+                        .min(SECTIONS.len().saturating_sub(1));
+                    self.screen = self.screen_from_selected_sidebar(self.sidebar_selected);
+                    None
+                }
+                _ => None,
+            };
         }
 
         match &self.input_mode {
@@ -446,8 +497,20 @@ impl App {
             InputMode::ConfirmingDelete => self.handle_key_confirming_delete(key),
         }
     }
+    fn screen_from_selected_sidebar(&self, idx: usize) -> Screen {
+        match idx {
+            0 => Screen::Dashboard,
+            1 => Screen::ItemList,
+            2 => Screen::CategoryList,
+            3 => Screen::WarehouseList,
+            4 => Screen::StockMovementLog,
+            5 => Screen::Settings,
+            _ => Screen::Dashboard,
+        }
+    }
     fn handle_key_normal(&mut self, key: KeyEvent) -> Option<Command> {
         let action = self.keymap.resolve(key)?;
+
         match (action, &self.screen) {
             (Action::Quit, _) => {
                 self.should_quit = true;

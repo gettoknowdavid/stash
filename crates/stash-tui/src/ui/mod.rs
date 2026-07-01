@@ -10,6 +10,7 @@ pub mod item_list;
 pub mod movement_log;
 pub mod popup;
 pub mod settings;
+pub mod sidebar;
 pub mod statusbar;
 pub mod warehouse_detail;
 pub mod warehouse_form;
@@ -25,19 +26,26 @@ pub fn render(f: &mut ratatui::Frame, app: &crate::app::App) {
 
     let (content, status) = (chunks[0], chunks[1]);
 
+    let body = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Length(22), Constraint::Min(0)])
+        .split(content);
+
+    sidebar::render(f, app, body[0]);
+
     match &app.screen {
-        Screen::Dashboard => dashboard::render(f, app, content),
-        Screen::ItemList => item_list::render(f, app, content),
-        Screen::ItemDetail(id) => item_detail::render(f, app, *id, content),
-        Screen::AddItem(form) => item_form::render(f, app, form, content),
-        Screen::CategoryList => category_list::render(f, app, content),
-        Screen::CategoryDetail(id) => category_detail::render(f, app, *id, content),
-        Screen::AddCategory(form) => category_form::render(f, app, form, content),
-        Screen::WarehouseList => warehouse_list::render(f, app, content),
-        Screen::WarehouseDetail(id) => warehouse_detail::render(f, app, *id, content),
-        Screen::AddWarehouse(form) => warehouse_form::render(f, app, form, content),
-        Screen::StockMovementLog => movement_log::render(f, app, content),
-        Screen::Settings => settings::render(f, app, content),
+        Screen::Dashboard => dashboard::render(f, app, body[1]),
+        Screen::ItemList => item_list::render(f, app, body[1]),
+        Screen::ItemDetail(id) => item_detail::render(f, app, *id, body[1]),
+        Screen::AddItem(form) => item_form::render(f, app, form, body[1]),
+        Screen::CategoryList => category_list::render(f, app, body[1]),
+        Screen::CategoryDetail(id) => category_detail::render(f, app, *id, body[1]),
+        Screen::AddCategory(form) => category_form::render(f, app, form, body[1]),
+        Screen::WarehouseList => warehouse_list::render(f, app, body[1]),
+        Screen::WarehouseDetail(id) => warehouse_detail::render(f, app, *id, body[1]),
+        Screen::AddWarehouse(form) => warehouse_form::render(f, app, form, body[1]),
+        Screen::StockMovementLog => movement_log::render(f, app, body[1]),
+        Screen::Settings => settings::render(f, app, body[1]),
     }
 
     statusbar::render(f, app, status);
