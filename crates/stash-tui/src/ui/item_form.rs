@@ -1,14 +1,4 @@
-#[derive(Debug, Clone, Default)]
-pub struct ItemFormState {
-    pub sku: tui_input::Input,
-    pub name: tui_input::Input,
-    pub unit_cost: tui_input::Input,
-    pub category_index: usize,
-    pub focused_field: usize,
-    pub error: Option<String>,
-}
-
-pub fn render(f: &mut ratatui::Frame, app: &crate::app::App, form: &ItemFormState) {
+pub fn render(f: &mut ratatui::Frame, app: &crate::app::App, form: &crate::app::ItemFormState) {
     use ratatui::layout::{Constraint, Direction, Layout};
     use ratatui::style::{Color, Style};
     use ratatui::widgets::{Block, Borders, Paragraph};

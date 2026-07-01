@@ -52,8 +52,7 @@ impl ItemRepository for ItemRepo {
         let mut qb = sqlx::QueryBuilder::new(
             "SELECT items.*, COALESCE(SUM(stock_levels.quantity), 0) AS total_quantity \
             FROM items \
-            LEFT JOIN stock_levels ON stock_levels.item_id = items.id \
-            WHERE 1 = 1",
+            LEFT JOIN stock_levels ON stock_levels.item_id = items.id",
         );
 
         if let Some(category_id) = &filter.category_id {

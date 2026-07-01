@@ -1,8 +1,55 @@
-use crossterm::event::{KeyCode, KeyEvent};
-use stash_core::ids::{ItemId, WarehouseId};
+use crossterm::event::KeyEvent;
+use stash_core::category::Category;
+use stash_core::ids::{CategoryId, ItemId, WarehouseId};
+use stash_core::item::ItemWithStock;
+use stash_core::stock::StockMovementRecord;
+use stash_core::warehouse::Warehouse;
 use tui_input::backend::crossterm::EventHandler;
 
 pub mod bridge;
+
+#[derive(Debug, Clone, Default)]
+pub struct ItemFormState {
+    pub sku: tui_input::Input,
+    pub name: tui_input::Input,
+    pub unit_cost: tui_input::Input,
+    pub category_index: usize,
+    pub focused_field: usize,
+    pub error: Option<String>,
+    pub editing_id: Option<ItemId>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct CategoryFormState {
+    pub name: tui_input::Input,
+    pub description: tui_input::Input,
+    pub focused_field: usize,
+    pub error: Option<String>,
+    pub editing_id: Option<CategoryId>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct WarehouseFormState {
+    pub name: tui_input::Input,
+    pub location: tui_input::Input,
+    pub focused_field: usize,
+    pub error: Option<String>,
+    pub editing_id: Option<WarehouseId>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct ItemDetailState {
+    pub adjust_input: tui_input::Input,
+    pub kind: AdjustKind,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum PendingDelete {
+    Item(ItemId),
+    Category(CategoryId),
+    Warehouse(WarehouseId),
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct KeyBinding {
@@ -21,10 +68,9 @@ pub enum Action {
     MoveUp,
     MoveDown,
     Select,
-    NewItem,
-    NewCategory,
-    NewWarehouse,
+    New,
     Delete,
+    Edit,
     Confirm,
     Cancel,
     Search,
@@ -42,11 +88,13 @@ impl Default for KeyMap {
         m.insert(KeyBinding::plain(KeyCode::Char('k')), Action::MoveUp);
         m.insert(KeyBinding::plain(KeyCode::Up), Action::MoveUp);
         m.insert(KeyBinding::plain(KeyCode::Enter), Action::Select);
-        m.insert(KeyBinding::plain(KeyCode::Char('n')), Action::NewItem);
+        m.insert(KeyBinding::plain(KeyCode::Char('n')), Action::New);
         m.insert(KeyBinding::plain(KeyCode::Char('d')), Action::Delete);
         m.insert(KeyBinding::plain(KeyCode::Delete), Action::Delete);
+        m.insert(KeyBinding::plain(KeyCode::Char('e')), Action::Edit);
         m.insert(KeyBinding::plain(KeyCode::Char('y')), Action::Confirm);
         m.insert(KeyBinding::plain(KeyCode::Char('/')), Action::Search);
+        m.insert(KeyBinding::plain(KeyCode::Esc), Action::Cancel);
         Self(m)
     }
 }
@@ -59,15 +107,19 @@ impl KeyMap {
 #[derive(Debug, Clone)]
 pub enum Screen {
     Dashboard,
+
     ItemList,
-    CategoryList,
-    WarehouseList,
+    AddItem(Box<ItemFormState>),
     ItemDetail(ItemId),
-    CategoryDetail(stash_core::ids::CategoryId),
+
+    CategoryList,
+    AddCategory(Box<CategoryFormState>),
+    CategoryDetail(CategoryId),
+
+    WarehouseList,
+    AddWarehouse(Box<WarehouseFormState>),
     WarehouseDetail(WarehouseId),
-    AddItem(Box<crate::ui::ItemFormState>),
-    AddCategory(Box<crate::ui::CategoryFormState>),
-    AddWarehouse(Box<crate::ui::WarehouseFormState>),
+
     StockMovementLog,
     Settings,
 }
@@ -106,32 +158,29 @@ impl AdjustKind {
     }
 }
 
-#[derive(Debug, Clone, Default)]
-pub struct ItemDetailState {
-    pub adjust_input: tui_input::Input,
-    pub kind: AdjustKind,
-    pub error: Option<String>,
-}
-
 #[derive(Debug, Clone)]
 pub enum Message {
     Tick,
     KeyPressed(KeyEvent),
 
-    ItemsLoaded(Vec<stash_core::item::ItemWithStock>),
-    ItemSaved(stash_core::item::ItemWithStock),
+    ItemsLoaded(Vec<ItemWithStock>),
+    ItemSaved(ItemWithStock),
+    ItemUpdated(ItemWithStock),
     ItemDeleted(ItemId),
 
-    CategoriesLoaded(Vec<stash_core::category::Category>),
-    CategorySaved(stash_core::category::Category),
-    CategoryDeleted(stash_core::ids::CategoryId),
+    CategoriesLoaded(Vec<Category>),
+    CategorySaved(Category),
+    CategoryUpdated(Category),
+    CategoryDeleted(CategoryId),
 
-    WarehousesLoaded(Vec<stash_core::warehouse::Warehouse>),
-    WarehouseSaved(stash_core::warehouse::Warehouse),
+    WarehousesLoaded(Vec<Warehouse>),
+    WarehouseSaved(Warehouse),
+    WarehouseUpdated(Warehouse),
     WarehouseDeleted(WarehouseId),
 
     StockUpdated(ItemId, u32),
-    MovementsLoaded(Vec<stash_core::stock::StockMovementRecord>),
+    MovementsLoaded(Vec<StockMovementRecord>),
+
     Error(String),
     None,
 }
@@ -146,7 +195,7 @@ pub enum Command {
     FetchCategories,
     SaveCategory(stash_storage::category_repository::CreateCategoryInput),
     UpdateCategory(stash_storage::category_repository::UpdateCategoryInput),
-    DeleteCategory(stash_core::ids::CategoryId),
+    DeleteCategory(CategoryId),
 
     FetchWarehouses,
     SaveWarehouse(stash_storage::warehouse_repository::CreateWarehouseInput),
@@ -169,17 +218,19 @@ pub enum Command {
 #[derive(Debug, Clone)]
 pub struct App {
     pub screen: Screen,
-    pub items: Vec<stash_core::item::ItemWithStock>,
-    pub categories: Vec<stash_core::category::Category>,
-    pub warehouses: Vec<stash_core::warehouse::Warehouse>,
-    pub selected: usize,
+    pub items: Vec<ItemWithStock>,
+    pub categories: Vec<Category>,
+    pub warehouses: Vec<Warehouse>,
+    pub item_selected: usize,
+    pub category_selected: usize,
+    pub warehouse_selected: usize,
     pub selected_warehouse: Option<WarehouseId>,
     pub input_mode: InputMode,
     pub status: Option<String>,
     pub should_quit: bool,
-    pub movement_page: Vec<stash_core::stock::StockMovementRecord>,
+    pub movement_page: Vec<StockMovementRecord>,
     pub item_detail: ItemDetailState,
-    pub pending_delete: Option<ItemId>,
+    pub pending_delete: Option<PendingDelete>,
     pub search_input: tui_input::Input,
     pub filtered: Vec<usize>,
     pub keymap: KeyMap,
@@ -197,7 +248,9 @@ impl App {
             items: Vec::new(),
             categories: Vec::new(),
             warehouses: Vec::new(),
-            selected: 0,
+            item_selected: 0,
+            category_selected: 0,
+            warehouse_selected: 0,
             selected_warehouse: None,
             input_mode: InputMode::default(),
             status: None,
@@ -233,7 +286,7 @@ impl App {
             .collect();
         scored.sort_by(|a, b| b.1.cmp(&a.1));
         self.filtered = scored.into_iter().map(|(i, _)| i).collect();
-        self.selected = 0;
+        self.item_selected = 0;
     }
 
     pub fn update(&mut self, msg: Message) -> Option<Command> {
@@ -243,10 +296,10 @@ impl App {
             Message::ItemsLoaded(items) => {
                 self.items = items;
                 self.recompute_filter();
-                self.selected = self.selected.min(self.filtered.len().saturating_sub(1));
+                self.item_selected = self.item_selected.min(self.filtered.len().saturating_sub(1));
                 None
             }
-            Message::ItemSaved(v) => {
+            Message::ItemSaved(v) | Message::ItemUpdated(v) => {
                 if let Some(existing) = self.items.iter_mut().find(|i| i.item.id == v.item.id) {
                     *existing = v;
                 } else {
@@ -260,7 +313,7 @@ impl App {
             Message::ItemDeleted(id) => {
                 self.items.retain(|i| i.item.id != id);
                 self.recompute_filter();
-                self.selected = self.selected.min(self.filtered.len().saturating_sub(1));
+                self.item_selected = self.item_selected.min(self.filtered.len().saturating_sub(1));
                 self.screen = Screen::ItemList;
                 self.input_mode = InputMode::Normal;
                 self.status = Some("Item deleted".into());
@@ -268,19 +321,24 @@ impl App {
             }
             Message::CategoriesLoaded(categories) => {
                 self.categories = categories;
+                self.category_selected =
+                    self.category_selected.min(self.categories.len().saturating_sub(1));
                 None
             }
-            Message::CategorySaved(category) => {
-                if let Some(existing) = self.categories.iter_mut().find(|c| c.id == category.id) {
-                    *existing = category;
+            Message::CategorySaved(c) | Message::CategoryUpdated(c) => {
+                if let Some(existing) = self.categories.iter_mut().find(|x| x.id == c.id) {
+                    *existing = c;
                 } else {
-                    self.categories.push(category);
+                    self.categories.push(c);
                 }
                 self.screen = Screen::CategoryList;
+                self.input_mode = InputMode::Normal;
                 None
             }
             Message::CategoryDeleted(id) => {
                 self.categories.retain(|c| c.id != id);
+                self.category_selected =
+                    self.category_selected.min(self.categories.len().saturating_sub(1));
                 self.screen = Screen::CategoryList;
                 self.input_mode = InputMode::Normal;
                 self.status = Some("Category deleted".into());
@@ -291,19 +349,27 @@ impl App {
                     self.selected_warehouse = warehouses.first().map(|w| w.id);
                 }
                 self.warehouses = warehouses;
+                self.warehouse_selected =
+                    self.warehouse_selected.min(self.warehouses.len().saturating_sub(1));
                 None
             }
-            Message::WarehouseSaved(warehouse) => {
-                if let Some(existing) = self.warehouses.iter_mut().find(|c| c.id == warehouse.id) {
-                    *existing = warehouse;
+            Message::WarehouseSaved(w) | Message::WarehouseUpdated(w) => {
+                if let Some(existing) = self.warehouses.iter_mut().find(|x| x.id == w.id) {
+                    *existing = w;
                 } else {
-                    self.warehouses.push(warehouse);
+                    self.warehouses.push(w);
                 }
                 self.screen = Screen::WarehouseList;
+                self.input_mode = InputMode::Normal;
                 None
             }
             Message::WarehouseDeleted(id) => {
                 self.warehouses.retain(|w| w.id != id);
+                if self.selected_warehouse == Some(id) {
+                    self.selected_warehouse = self.warehouses.first().map(|w| w.id);
+                }
+                self.warehouse_selected =
+                    self.warehouse_selected.min(self.warehouses.len().saturating_sub(1));
                 self.screen = Screen::WarehouseList;
                 self.input_mode = InputMode::Normal;
                 self.status = Some("Warehouse deleted".into());
@@ -330,54 +396,62 @@ impl App {
     }
     pub fn handle_key(&mut self, key: KeyEvent) -> Option<Command> {
         use crossterm::event::KeyCode;
+
+        // Global screen-switching, available from Normal mode anywhere. Kept out of
+        // KeyMap deliberately — these are navigation shortcuts, not remappable actions.
+        if self.input_mode == InputMode::Normal {
+            match key.code {
+                KeyCode::Char('1') => {
+                    self.screen = Screen::Dashboard;
+                    return None;
+                }
+                KeyCode::Char('2') => {
+                    self.screen = Screen::ItemList;
+                    return None;
+                }
+                KeyCode::Char('3') => {
+                    self.screen = Screen::CategoryList;
+                    return None;
+                }
+                KeyCode::Char('4') => {
+                    self.screen = Screen::WarehouseList;
+                    return None;
+                }
+                KeyCode::Char('5') => {
+                    self.screen = Screen::StockMovementLog;
+                    return Some(Command::FetchMovements { item_id: None, limit: 20, offset: 0 });
+                }
+                KeyCode::Char('6') => {
+                    self.screen = Screen::Settings;
+                    return None;
+                }
+                _ => {}
+            }
+        }
+
         match &self.input_mode {
             InputMode::Normal => self.handle_key_normal(key),
             InputMode::Editing => self.handle_key_editing(key),
-            InputMode::Searching => {
-                match key.code {
-                    KeyCode::Esc => {
-                        self.input_mode = InputMode::Normal;
-                        self.search_input = tui_input::Input::default();
-                        self.recompute_filter();
-                    }
-                    KeyCode::Enter => self.input_mode = InputMode::Normal,
-                    _ => {
-                        self.search_input.handle_event(&crossterm::event::Event::Key(key));
-                        self.recompute_filter();
-                    }
-                }
-                None
-            }
-            InputMode::ConfirmingDelete => match self.keymap.resolve(key) {
-                Some(Action::Confirm) => {
-                    self.input_mode = InputMode::Normal;
-                    self.pending_delete.take().map(Command::DeleteItem)
-                }
-                Some(Action::Cancel) | _
-                    if matches!(key.code, KeyCode::Char('n') | KeyCode::Esc) =>
-                {
-                    self.input_mode = InputMode::Normal;
-                    self.pending_delete = None;
-                    None
-                }
-                _ => None,
-            },
+            InputMode::Searching => self.handle_key_searching(key),
+            InputMode::ConfirmingDelete => self.handle_key_confirming_delete(key),
         }
     }
     fn handle_key_normal(&mut self, key: KeyEvent) -> Option<Command> {
-        let Some(action) = self.keymap.resolve(key) else { return None };
+        let action = self.keymap.resolve(key)?;
         match (action, &self.screen) {
             (Action::Quit, _) => {
                 self.should_quit = true;
                 None
             }
-            (Action::MoveDown, Screen::ItemList | Screen::CategoryList | Screen::WarehouseList) => {
-                self.selected =
-                    self.selected.saturating_add(1).min(self.filtered.len().saturating_sub(1));
+
+            // --- Item list ---
+            (Action::MoveDown, Screen::ItemList) => {
+                self.item_selected =
+                    self.item_selected.saturating_add(1).min(self.filtered.len().saturating_sub(1));
                 None
             }
-            (Action::MoveUp, Screen::ItemList | Screen::CategoryList | Screen::WarehouseList) => {
-                self.selected = self.selected.saturating_sub(1);
+            (Action::MoveUp, Screen::ItemList) => {
+                self.item_selected = self.item_selected.saturating_sub(1);
                 None
             }
             (Action::Search, Screen::ItemList) => {
@@ -385,36 +459,136 @@ impl App {
                 None
             }
             (Action::Select, Screen::ItemList) => {
-                let idx = self.filtered.get(self.selected).copied()?;
+                let idx = self.filtered.get(self.item_selected).copied()?;
                 let id = self.items.get(idx)?.item.id;
                 self.screen = Screen::ItemDetail(id);
                 self.item_detail = ItemDetailState::default();
                 Some(Command::FetchMovements { item_id: Some(id), limit: 20, offset: 0 })
             }
-            (Action::NewItem, Screen::ItemList) => {
-                self.screen = Screen::AddItem(Box::new(crate::ui::ItemFormState::default()));
+            (Action::New, Screen::ItemList) => {
+                self.screen = Screen::AddItem(Box::default());
                 self.input_mode = InputMode::Editing;
                 None
             }
-            (Action::NewCategory, Screen::CategoryList) => {
-                self.screen =
-                    Screen::AddCategory(Box::new(crate::ui::CategoryFormState::default()));
-                self.input_mode = InputMode::Editing;
-                None
-            }
-            (Action::NewWarehouse, Screen::WarehouseList) => {
-                self.screen =
-                    Screen::AddWarehouse(Box::new(crate::ui::WarehouseFormState::default()));
-                self.input_mode = InputMode::Editing;
-                None
-            }
+
+            // --- Item detail ---
             (Action::Delete, Screen::ItemDetail(id)) => {
-                self.pending_delete = Some(*id);
+                self.pending_delete = Some(PendingDelete::Item(*id));
                 self.input_mode = InputMode::ConfirmingDelete;
+                None
+            }
+            (Action::Edit, Screen::ItemDetail(id)) => {
+                let entry = self.items.iter().find(|e| e.item.id == *id)?;
+                let mut form = ItemFormState {
+                    sku: tui_input::Input::new(entry.item.sku.0.clone()),
+                    name: tui_input::Input::new(entry.item.name.clone()),
+                    unit_cost: tui_input::Input::new(entry.item.unit_cost.0.to_string()),
+                    editing_id: Some(*id),
+                    ..Default::default()
+                };
+                form.category_index = self
+                    .categories
+                    .iter()
+                    .position(|c| c.id == entry.item.category_id)
+                    .unwrap_or(0);
+                self.screen = Screen::AddItem(Box::new(form));
+                self.input_mode = InputMode::Editing;
                 None
             }
             (Action::Cancel, Screen::ItemDetail(_)) => {
                 self.screen = Screen::ItemList;
+                None
+            }
+
+            // --- Category list ---
+            (Action::MoveDown, Screen::CategoryList) => {
+                self.category_selected = self
+                    .category_selected
+                    .saturating_add(1)
+                    .min(self.categories.len().saturating_sub(1));
+                None
+            }
+            (Action::MoveUp, Screen::CategoryList) => {
+                self.category_selected = self.category_selected.saturating_sub(1);
+                None
+            }
+            (Action::Select, Screen::CategoryList) => {
+                let c = self.categories.get(self.category_selected)?;
+                self.screen = Screen::CategoryDetail(c.id);
+                None
+            }
+            (Action::New, Screen::CategoryList) => {
+                self.screen = Screen::AddCategory(Box::default());
+                self.input_mode = InputMode::Editing;
+                None
+            }
+
+            // --- Category detail ---
+            (Action::Delete, Screen::CategoryDetail(id)) => {
+                self.pending_delete = Some(PendingDelete::Category(*id));
+                self.input_mode = InputMode::ConfirmingDelete;
+                None
+            }
+            (Action::Edit, Screen::CategoryDetail(id)) => {
+                let c = self.categories.iter().find(|c| c.id == *id)?;
+                let form = CategoryFormState {
+                    name: tui_input::Input::new(c.name.0.clone()),
+                    description: tui_input::Input::new(c.description.clone().unwrap_or_default()),
+                    editing_id: Some(*id),
+                    ..Default::default()
+                };
+                self.screen = Screen::AddCategory(Box::new(form));
+                self.input_mode = InputMode::Editing;
+                None
+            }
+            (Action::Cancel, Screen::CategoryDetail(_)) => {
+                self.screen = Screen::CategoryList;
+                None
+            }
+
+            // --- Warehouse list ---
+            (Action::MoveDown, Screen::WarehouseList) => {
+                self.warehouse_selected = self
+                    .warehouse_selected
+                    .saturating_add(1)
+                    .min(self.warehouses.len().saturating_sub(1));
+                None
+            }
+            (Action::MoveUp, Screen::WarehouseList) => {
+                self.warehouse_selected = self.warehouse_selected.saturating_sub(1);
+                None
+            }
+            (Action::Select, Screen::WarehouseList) => {
+                let w = self.warehouses.get(self.warehouse_selected)?;
+                self.screen = Screen::WarehouseDetail(w.id);
+                None
+            }
+            (Action::New, Screen::WarehouseList) => {
+                self.screen = Screen::AddWarehouse(Box::default());
+                self.input_mode = InputMode::Editing;
+                None
+            }
+
+            // --- Warehouse detail ---
+            (Action::Delete, Screen::WarehouseDetail(id)) => {
+                self.pending_delete = Some(PendingDelete::Warehouse(*id));
+                self.input_mode = InputMode::ConfirmingDelete;
+                None
+            }
+            (Action::Edit, Screen::WarehouseDetail(id)) => {
+                let w = self.warehouses.iter().find(|w| w.id == *id)?;
+                let form = WarehouseFormState {
+                    name: tui_input::Input::new(w.name.0.clone()),
+                    location: tui_input::Input::new(w.location.clone().unwrap_or_default()),
+                    editing_id: Some(*id),
+                    ..Default::default()
+                };
+                self.screen = Screen::AddWarehouse(Box::new(form));
+                self.input_mode = InputMode::Editing;
+                None
+            }
+            (Action::Cancel, Screen::WarehouseDetail(_)) => {
+                self.screen = Screen::WarehouseList;
                 None
             }
             _ => None,
@@ -423,17 +597,31 @@ impl App {
     fn handle_key_editing(&mut self, key: KeyEvent) -> Option<Command> {
         use crossterm::event::KeyCode;
 
-        // The item-detail "edit" screen handles its own field (a single quantity input)
-        // separately from the add-item form's multi-field tabbing.
-        if let Screen::ItemDetail(id) = &self.screen {
-            let id = *id;
-            return self.handle_key_item_detail(key, id);
+        match &self.screen {
+            Screen::ItemDetail(id) => return self.handle_key_item_detail(key, *id),
+            Screen::AddItem(_) => return self.handle_key_add_item(key),
+            Screen::AddCategory(_) => return self.handle_key_add_category(key),
+            Screen::AddWarehouse(_) => return self.handle_key_add_warehouse(key),
+            _ => {}
         }
 
+        if key.code == KeyCode::Esc {
+            self.input_mode = InputMode::Normal;
+        }
+        None
+    }
+    fn handle_key_add_item(&mut self, key: KeyEvent) -> Option<Command> {
+        use crossterm::event::KeyCode;
         match key.code {
             KeyCode::Esc => {
                 self.input_mode = InputMode::Normal;
                 self.screen = Screen::ItemList;
+                None
+            }
+            KeyCode::Tab => {
+                if let Screen::AddItem(form) = &mut self.screen {
+                    form.focused_field = (form.focused_field + 1) % 4;
+                }
                 None
             }
             KeyCode::BackTab => {
@@ -442,16 +630,8 @@ impl App {
                 }
                 None
             }
-            KeyCode::Enter => {
-                if let Screen::AddItem(form) = &mut self.screen {
-                    if form.focused_field < 3 {
-                        form.focused_field += 1;
-                        return None;
-                    }
-                }
-                self.try_submit_add_item_form()
-            }
-            KeyCode::Left | KeyCode::Right if self.is_category_field_focused() => {
+            KeyCode::Left | KeyCode::Right if matches!(&self.screen, Screen::AddItem(f) if f.focused_field == 3) =>
+            {
                 if let Screen::AddItem(form) = &mut self.screen {
                     if !self.categories.is_empty() {
                         let len = self.categories.len();
@@ -464,11 +644,14 @@ impl App {
                 }
                 None
             }
-            KeyCode::Tab => {
+            KeyCode::Enter => {
                 if let Screen::AddItem(form) = &mut self.screen {
-                    form.focused_field = (form.focused_field + 1) % 4;
+                    if form.focused_field < 3 {
+                        form.focused_field += 1;
+                        return None;
+                    }
                 }
-                None
+                self.try_submit_add_item_form()
             }
             _ => {
                 if let Screen::AddItem(form) = &mut self.screen {
@@ -485,9 +668,6 @@ impl App {
             }
         }
     }
-    fn is_category_field_focused(&self) -> bool {
-        matches!(&self.screen, Screen::AddItem(form) if form.focused_field == 3)
-    }
     fn handle_key_item_detail(&mut self, key: KeyEvent, item_id: ItemId) -> Option<Command> {
         use crossterm::event::KeyCode;
         match key.code {
@@ -500,17 +680,236 @@ impl App {
                 self.item_detail.kind = self.item_detail.kind.next();
                 None
             }
-            KeyCode::Char('d') => {
-                self.pending_delete = Some(item_id);
-                self.input_mode = InputMode::ConfirmingDelete;
-                None
-            }
             KeyCode::Enter => self.try_submit_stock_adjustment(item_id),
             _ => {
                 self.item_detail.adjust_input.handle_event(&crossterm::event::Event::Key(key));
                 None
             }
         }
+    }
+    fn handle_key_add_category(&mut self, key: KeyEvent) -> Option<Command> {
+        use crossterm::event::KeyCode;
+        match key.code {
+            KeyCode::Esc => {
+                self.input_mode = InputMode::Normal;
+                self.screen = Screen::CategoryList;
+                None
+            }
+            KeyCode::Tab | KeyCode::Down => {
+                if let Screen::AddCategory(form) = &mut self.screen {
+                    form.focused_field = (form.focused_field + 1) % 2;
+                }
+                None
+            }
+            KeyCode::BackTab | KeyCode::Up => {
+                if let Screen::AddCategory(form) = &mut self.screen {
+                    form.focused_field = form.focused_field.checked_sub(1).unwrap_or(1);
+                }
+                None
+            }
+            KeyCode::Enter => {
+                if let Screen::AddCategory(form) = &mut self.screen {
+                    if form.focused_field == 0 {
+                        form.focused_field = 1;
+                        return None;
+                    }
+                }
+                self.try_submit_category_form()
+            }
+            _ => {
+                if let Screen::AddCategory(form) = &mut self.screen {
+                    let field = if form.focused_field == 0 {
+                        &mut form.name
+                    } else {
+                        &mut form.description
+                    };
+                    field.handle_event(&crossterm::event::Event::Key(key));
+                }
+                None
+            }
+        }
+    }
+    fn handle_key_add_warehouse(&mut self, key: KeyEvent) -> Option<Command> {
+        use crossterm::event::KeyCode;
+        match key.code {
+            KeyCode::Esc => {
+                self.input_mode = InputMode::Normal;
+                self.screen = Screen::WarehouseList;
+                None
+            }
+            KeyCode::Tab | KeyCode::Down => {
+                if let Screen::AddWarehouse(form) = &mut self.screen {
+                    form.focused_field = (form.focused_field + 1) % 2;
+                }
+                None
+            }
+            KeyCode::BackTab | KeyCode::Up => {
+                if let Screen::AddWarehouse(form) = &mut self.screen {
+                    form.focused_field = form.focused_field.checked_sub(1).unwrap_or(1);
+                }
+                None
+            }
+            KeyCode::Enter => {
+                if let Screen::AddWarehouse(form) = &mut self.screen {
+                    if form.focused_field == 0 {
+                        form.focused_field = 1;
+                        return None;
+                    }
+                }
+                self.try_submit_warehouse_form()
+            }
+            _ => {
+                if let Screen::AddWarehouse(form) = &mut self.screen {
+                    let field =
+                        if form.focused_field == 0 { &mut form.name } else { &mut form.location };
+                    field.handle_event(&crossterm::event::Event::Key(key));
+                }
+                None
+            }
+        }
+    }
+    fn handle_key_searching(&mut self, key: KeyEvent) -> Option<Command> {
+        use crossterm::event::{Event, KeyCode};
+        match key.code {
+            KeyCode::Esc => {
+                self.input_mode = InputMode::Normal;
+                self.search_input = tui_input::Input::default();
+                self.recompute_filter();
+            }
+            KeyCode::Enter => self.input_mode = InputMode::Normal,
+            _ => {
+                self.search_input.handle_event(&Event::Key(key));
+                self.recompute_filter();
+            }
+        }
+        None
+    }
+    fn handle_key_confirming_delete(&mut self, key: KeyEvent) -> Option<Command> {
+        use crossterm::event::KeyCode;
+        match key.code {
+            KeyCode::Char('y') => {
+                self.input_mode = InputMode::Normal;
+                match self.pending_delete.take()? {
+                    PendingDelete::Item(id) => Some(Command::DeleteItem(id)),
+                    PendingDelete::Category(id) => Some(Command::DeleteCategory(id)),
+                    PendingDelete::Warehouse(id) => Some(Command::DeleteWarehouse(id)),
+                }
+            }
+            KeyCode::Char('n') | KeyCode::Esc => {
+                self.input_mode = InputMode::Normal;
+                self.pending_delete = None;
+                None
+            }
+            _ => None,
+        }
+    }
+    fn try_submit_add_item_form(&mut self) -> Option<Command> {
+        let Screen::AddItem(form) = &mut self.screen else { return None };
+        form.error = None;
+
+        let sku = match stash_core::sku::Sku::parse(form.sku.value()) {
+            Ok(sku) => sku,
+            Err(e) => {
+                form.error = Some(e.to_string());
+                return None;
+            }
+        };
+
+        if form.name.value().trim().is_empty() {
+            form.error = Some("name is required".into());
+            return None;
+        }
+
+        let unit_cost = match form.unit_cost.value().parse::<i64>() {
+            Ok(v) => v,
+            Err(_) => {
+                form.error = Some("unit cost must be a whole number (kobo)".into());
+                return None;
+            }
+        };
+
+        let Some(category) = self.categories.get(form.category_index) else {
+            form.error = Some("no category available — create one first".into());
+            return None;
+        };
+
+        let input = stash_storage::item_repository::CreateItemInput {
+            id: ItemId::new(),
+            sku,
+            name: form.name.value().to_string(),
+            description: None,
+            category_id: category.id,
+            unit_cost: stash_core::money::Money(unit_cost),
+            reorder_threshold: 0,
+        };
+
+        Some(Command::SaveItem(input))
+    }
+    fn try_submit_category_form(&mut self) -> Option<Command> {
+        let Screen::AddCategory(form) = &mut self.screen else { return None };
+        form.error = None;
+
+        let name = match stash_core::category::CategoryName::parse(form.name.value()) {
+            Ok(n) => n,
+            Err(e) => {
+                form.error = Some(e.to_string());
+                return None;
+            }
+        };
+        let description = if form.description.value().trim().is_empty() {
+            None
+        } else {
+            Some(form.description.value().to_string())
+        };
+
+        if let Some(id) = form.editing_id {
+            return Some(Command::UpdateCategory(
+                stash_storage::category_repository::UpdateCategoryInput {
+                    id,
+                    name: Some(name),
+                    description,
+                },
+            ));
+        }
+
+        Some(Command::SaveCategory(stash_storage::category_repository::CreateCategoryInput {
+            id: CategoryId::new(),
+            name,
+            description,
+        }))
+    }
+    fn try_submit_warehouse_form(&mut self) -> Option<Command> {
+        let Screen::AddWarehouse(form) = &mut self.screen else { return None };
+        form.error = None;
+
+        let name = match stash_core::warehouse::WarehouseName::parse(form.name.value()) {
+            Ok(n) => n,
+            Err(e) => {
+                form.error = Some(e.to_string());
+                return None;
+            }
+        };
+        let location = if form.location.value().trim().is_empty() {
+            None
+        } else {
+            Some(form.location.value().to_string())
+        };
+
+        if let Some(id) = form.editing_id {
+            return Some(Command::UpdateWarehouse(
+                stash_storage::warehouse_repository::UpdateWarehouseInput {
+                    id,
+                    name: Some(name),
+                    location,
+                },
+            ));
+        }
+
+        Some(Command::SaveWarehouse(stash_storage::warehouse_repository::CreateWarehouseInput {
+            id: WarehouseId::new(),
+            name,
+            location,
+        }))
     }
     fn try_submit_stock_adjustment(&mut self, item_id: ItemId) -> Option<Command> {
         self.item_detail.error = None;
@@ -555,47 +954,5 @@ impl App {
         };
 
         Some(Command::RecordMovement { item_id, warehouse_id, movement })
-    }
-    fn try_submit_add_item_form(&mut self) -> Option<Command> {
-        let Screen::AddItem(form) = &mut self.screen else { return None };
-        form.error = None;
-
-        let sku = match stash_core::sku::Sku::parse(form.sku.value()) {
-            Ok(sku) => sku,
-            Err(e) => {
-                form.error = Some(e.to_string());
-                return None;
-            }
-        };
-
-        if form.name.value().trim().is_empty() {
-            form.error = Some("name is required".into());
-            return None;
-        }
-
-        let unit_cost = match form.unit_cost.value().parse::<i64>() {
-            Ok(v) => v,
-            Err(_) => {
-                form.error = Some("unit cost must be a whole number (kobo)".into());
-                return None;
-            }
-        };
-
-        let Some(category) = self.categories.get(form.category_index) else {
-            form.error = Some("no category available — create one first".into());
-            return None;
-        };
-
-        let input = stash_storage::item_repository::CreateItemInput {
-            id: ItemId::new(),
-            sku,
-            name: form.name.value().to_string(),
-            description: None,
-            category_id: category.id,
-            unit_cost: stash_core::money::Money(unit_cost),
-            reorder_threshold: 0,
-        };
-
-        Some(Command::SaveItem(input))
     }
 }

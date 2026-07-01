@@ -32,7 +32,7 @@ pub fn render(f: &mut ratatui::Frame, app: &crate::app::App) {
             let below = entry.qty < entry.item.reorder_threshold;
             let style = if below {
                 Style::default().fg(Color::Red)
-            } else if visual_idx == app.selected {
+            } else if visual_idx == app.item_selected {
                 Style::default().bg(Color::Blue)
             } else {
                 Style::default()

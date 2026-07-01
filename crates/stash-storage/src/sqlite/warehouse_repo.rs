@@ -49,7 +49,7 @@ impl crate::warehouse_repository::WarehouseRepository for WarehouseRepo {
     async fn update(&self, input: &UpdateWarehouseInput) -> Result<Warehouse, StorageError> {
         let mut qb = sqlx::QueryBuilder::new("UPDATE warehouses SET ");
         if let Some(name) = &input.name {
-            qb.push(" name = ").push_bind(name);
+            qb.push(" name = ").push_bind(name.0.as_str());
         }
         if let Some(location) = &input.location {
             qb.push(" location = ").push_bind(location);
@@ -62,15 +62,14 @@ impl crate::warehouse_repository::WarehouseRepository for WarehouseRepo {
 
     //noinspection SqlType
     async fn delete(&self, id: WarehouseId) -> Result<(), StorageError> {
-        // let is_used: bool =
-        //     sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM items WHERE category_id = ?)")
-        //         .bind(id.0.to_string())
-        //         .fetch_one(&self.db)
-        //         .await?;
-        // if is_used {
-        //     return Err(StorageError::WarehouseInUse(id));
-        // }
-
+        let is_used: bool =
+            sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM stock_levels WHERE warehouse_id = ?)")
+                .bind(id.0.to_string())
+                .fetch_one(&self.db)
+                .await?;
+        if is_used {
+            return Err(StorageError::WarehouseInUse(id));
+        }
         sqlx::query("DELETE FROM warehouses WHERE id = ?")
             .bind(id.0.to_string())
             .execute(&self.db)

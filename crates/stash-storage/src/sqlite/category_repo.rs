@@ -49,7 +49,7 @@ impl crate::category_repository::CategoryRepository for CategoryRepo {
     async fn update(&self, input: &UpdateCategoryInput) -> Result<Category, StorageError> {
         let mut qb = sqlx::QueryBuilder::new("UPDATE categories SET ");
         if let Some(name) = &input.name {
-            qb.push(" name = ").push_bind(name);
+            qb.push(" name = ").push_bind(name.0.as_str());
         }
         if let Some(description) = &input.description {
             qb.push(" description = ").push_bind(description);

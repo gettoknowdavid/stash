@@ -1,4 +1,4 @@
-use crate::app::bridge::spawn_storage_task;
+use crate::app::bridge::{spawn_storage_task, StorageRepositories};
 use crate::app::{App, Command, Message};
 use crate::terminal::{init_panic_hook, init_terminal, restore_terminal};
 use stash_core::category::CategoryName;
@@ -73,16 +73,14 @@ fn main() -> anyhow::Result<()> {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let handle = tokio::spawn(async move {
-                spawn_storage_task(
-                    item_repo,
-                    movement_repo,
-                    stock_repo,
-                    category_repo,
-                    warehouse_repo,
-                    cmd_rx,
-                    msg_tx,
-                )
-                .await;
+                let repos = StorageRepositories {
+                    item: item_repo,
+                    movement: movement_repo,
+                    stock: stock_repo,
+                    category: category_repo,
+                    warehouse: warehouse_repo,
+                };
+                spawn_storage_task(repos, cmd_rx, msg_tx).await;
             });
             let _ = handle.await;
         });
