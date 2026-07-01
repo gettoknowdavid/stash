@@ -66,13 +66,14 @@ async fn update_item_changes_field_values() {
     let created = repo.create(&input).await.unwrap();
 
     let update = stash_storage::item_repository::UpdateItemInput {
-        name: Some("New Name"),
+        id: created.id,
+        name: Some("New Name".to_string()),
         description: None,
         category_id: None,
         unit_cost: None,
         reorder_threshold: None,
     };
-    let updated = repo.update(created.id, &update).await.unwrap();
+    let updated = repo.update(&update).await.unwrap();
 
     assert_eq!(updated.name, "New Name");
 }

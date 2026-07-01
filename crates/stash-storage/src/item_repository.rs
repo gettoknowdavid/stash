@@ -76,7 +76,7 @@ pub trait ItemRepository: Send + Sync {
     /// # Errors
     /// This function will return a `StorageError` in case of failure. Refer to
     /// the `StorageError` documentation for more details regarding the possible error variants.
-    async fn update(&self, id: ItemId, input: &UpdateItemInput<'_>) -> Result<Item, StorageError>;
+    async fn update(&self,  input: &UpdateItemInput) -> Result<Item, StorageError>;
 
     /// Deletes an item from the storage.
     ///
@@ -105,9 +105,11 @@ pub struct CreateItemInput {
     pub reorder_threshold: u32,
 }
 
-pub struct UpdateItemInput<'a> {
-    pub name: Option<&'a str>,
-    pub description: Option<&'a str>,
+#[derive(Clone, Debug)]
+pub struct UpdateItemInput {
+    pub id: ItemId,
+    pub name: Option<String>,
+    pub description: Option<String>,
     pub category_id: Option<CategoryId>,
     pub unit_cost: Option<Money>,
     pub reorder_threshold: Option<u32>,

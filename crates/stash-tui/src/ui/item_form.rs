@@ -1,5 +1,5 @@
 #[derive(Debug, Clone, Default)]
-pub struct AddItemFormState {
+pub struct ItemFormState {
     pub sku: tui_input::Input,
     pub name: tui_input::Input,
     pub unit_cost: tui_input::Input,
@@ -8,7 +8,7 @@ pub struct AddItemFormState {
     pub category_id: Option<stash_core::ids::CategoryId>,
 }
 
-pub fn render(f: &mut ratatui::Frame, _app: &crate::app::App, form: &AddItemFormState) {
+pub fn render(f: &mut ratatui::Frame, _app: &crate::app::App, form: &ItemFormState) {
     use ratatui::layout::{Constraint, Direction, Layout};
     use ratatui::style::{Color, Style};
     use ratatui::widgets::{Block, Borders, Paragraph};

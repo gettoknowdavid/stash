@@ -7,6 +7,8 @@ use stash_storage::movement_log_repository::MovementLogRepository;
 use stash_storage::sqlite::item_repo::ItemRepo;
 use stash_storage::sqlite::movement_log_repo::MovementLogRepo;
 use std::sync::Arc;
+use stash_storage::category_repository::CategoryRepository;
+use stash_storage::sqlite::category_repo::CategoryRepo;
 
 pub mod app;
 pub mod terminal;
@@ -19,6 +21,8 @@ fn main() -> anyhow::Result<()> {
     let runtime = tokio::runtime::Runtime::new()?;
     let db = runtime.block_on(stash_storage::sqlite::connect("stash.db"))?;
     let item_repo: Arc<dyn ItemRepository> = Arc::new(ItemRepo::new(db.clone()));
+    let category_repo: Arc<dyn CategoryRepository> = Arc::new(CategoryRepo::new(db));
+    let category_repo: Arc<dyn CategoryRepository> = Arc::new(CategoryRepo::new(db));
     let movement_repo: Arc<dyn MovementLogRepository> = Arc::new(MovementLogRepo::new(db));
 
     let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel::<Command>();

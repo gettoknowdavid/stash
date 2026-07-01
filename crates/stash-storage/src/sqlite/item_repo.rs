@@ -82,13 +82,13 @@ impl ItemRepository for ItemRepo {
         Ok(rows)
     }
 
-    async fn update(&self, id: ItemId, input: &UpdateItemInput<'_>) -> Result<Item, StorageError> {
+    async fn update(&self, input: &UpdateItemInput) -> Result<Item, StorageError> {
         let mut qb = sqlx::QueryBuilder::new("UPDATE items SET updated_at = CURRENT_TIMESTAMP");
 
-        if let Some(name) = input.name {
+        if let Some(name) = &input.name {
             qb.push(", name = ").push_bind(name);
         }
-        if let Some(description) = input.description {
+        if let Some(description) = &input.description {
             qb.push(", description = ").push_bind(description);
         }
         if let Some(category_id) = input.category_id {
@@ -101,7 +101,7 @@ impl ItemRepository for ItemRepo {
             qb.push(", reorder_threshold = ").push_bind(i64::from(reorder_threshold));
         }
 
-        qb.push(" WHERE id = ").push_bind(id.0.to_string());
+        qb.push(" WHERE id = ").push_bind(input.id.0.to_string());
         qb.push(" RETURNING *");
 
         let row = qb.build_query_as::<Item>().fetch_one(&self.db).await?;

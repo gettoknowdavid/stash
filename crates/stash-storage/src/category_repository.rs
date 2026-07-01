@@ -11,12 +11,14 @@ pub trait CategoryRepository: Send + Sync {
     async fn delete(&self, id: CategoryId) -> Result<(), StorageError>;
 }
 
+#[derive(Debug, Clone)]
 pub struct CreateCategoryInput {
     pub id: CategoryId,
     pub name: stash_core::category::CategoryName,
     pub description: Option<String>,
 }
 
+#[derive(Debug, Clone)]
 pub struct UpdateCategoryInput {
     pub id: CategoryId,
     pub name: Option<stash_core::category::CategoryName>,

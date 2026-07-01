@@ -4,6 +4,7 @@ use std::str::FromStr;
 pub mod category_repo;
 pub mod item_repo;
 pub mod movement_log_repo;
+pub mod stock_repo;
 pub mod warehouse_repo;
 
 ///

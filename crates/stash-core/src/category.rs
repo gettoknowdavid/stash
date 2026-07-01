@@ -1,4 +1,4 @@
-#[derive(sqlx::FromRow)]
+#[derive(Debug, Clone, sqlx::FromRow)]
 pub struct Category {
     pub id: crate::ids::CategoryId,
     pub name: CategoryName,
