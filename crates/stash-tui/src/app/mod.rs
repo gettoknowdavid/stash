@@ -405,6 +405,7 @@ impl App {
                     entry.qty = i64::from(qty);
                 }
                 self.item_detail = ItemDetailState::default();
+                self.input_mode = InputMode::Normal;
                 self.status = Some("Stock updated".into());
                 Some(Command::FetchMovements { item_id: Some(item_id), limit: 20, offset: 0 })
             }

@@ -35,7 +35,7 @@ pub fn render(f: &mut ratatui::Frame, app: &App, item_id: ItemId, area: Rect) {
 
     let adjust_block = Block::default()
         .title(format!(
-            "Adjust @ {warehouse_name} — [{}, Tab to change]",
+            "Adjust @ {warehouse_name} — [{}, Tab to change or (← →)]",
             app.item_detail.kind.label()
         ))
         .borders(Borders::ALL);
