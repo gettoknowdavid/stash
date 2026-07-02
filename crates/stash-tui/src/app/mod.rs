@@ -14,8 +14,8 @@ pub const SECTIONS: [&str; 6] =
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Pane {
-    Sidebar,
     #[default]
+    Sidebar,
     Content,
 }
 
