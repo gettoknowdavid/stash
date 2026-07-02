@@ -5,10 +5,10 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-thiserror = { workspace = true }
-uuid = { version = "1.23.3", features = ["v4", "serde"] }
 sqlx = { version = "0.9.0", features = ["sqlite", "time", "uuid", "macros", "derive"] }
+thiserror = { workspace = true }
 time = { workspace = true }
+uuid = { version = "1.23.3", features = ["v4", "serde"] }
 
 [dev-dependencies]
 proptest = "1.11.0"

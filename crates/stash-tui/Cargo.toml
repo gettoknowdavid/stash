@@ -9,11 +9,19 @@ name = "stash"
 path = "src/main.rs"
 
 [dependencies]
+anyhow = { workspace = true }
+clap = { workspace = true }
+crossterm = "0.29.0"
+csv = "1.4.0"
+directories = { workspace = true }
+fuzzy-matcher = "0.3.7"
+ratatui = "0.30.2"
+serde = { workspace = true }
 stash-core = { path = "../stash-core" }
 stash-storage = { path = "../stash-storage" }
-anyhow = { workspace = true }
-crossterm = "0.29.0"
 tokio = { version = "1.52.3", features = ["rt-multi-thread", "macros", "time"] }
+toml = { workspace = true }
+tracing = "0.1.44"
+tracing-appender = "0.2.5"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 tui-input = { version = "0.15.3", features = ["crossterm", "ratatui", "ratatui-crossterm"] }
-ratatui = "0.30.2"
-fuzzy-matcher = "0.3.7"

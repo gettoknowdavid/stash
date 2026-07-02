@@ -5,9 +5,9 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-stash-core = { path = "../stash-core" }
-thiserror = { workspace = true }
 async-trait = "0.1.89"
 sqlx = { version = "0.9.0", features = ["runtime-tokio", "sqlite", "uuid", "time", "macros", "derive"] }
-tokio = { version = "1.52.3", features = ["rt-multi-thread", "macros", "time"] }
+stash-core = { path = "../stash-core" }
+thiserror = { workspace = true }
 time = { workspace = true }
+tokio = { version = "1.52.3", features = ["rt-multi-thread", "macros", "time"] }
