@@ -13,8 +13,13 @@ pub fn render(f: &mut ratatui::Frame, app: &crate::app::App, area: Rect) {
     } else {
         "Search ( / to search )"
     };
-    let search = Paragraph::new(app.search_input.value())
-        .block(Block::default().title(search_title).borders(Borders::ALL));
+    let is_search_bar_focused = app.focused_pane == crate::app::Pane::ItemsSearchBar;
+    let search = Paragraph::new(app.search_input.value()).block(
+        Block::default()
+            .title(search_title)
+            .borders(Borders::ALL)
+            .border_style(app.theme.border_style(is_search_bar_focused)),
+    );
     f.render_widget(search, chunks[0]);
 
     let header = Row::new(vec!["SKU", "Name", "Category", "Qty", "Status"])
@@ -58,9 +63,13 @@ pub fn render(f: &mut ratatui::Frame, app: &crate::app::App, area: Rect) {
         Constraint::Length(8),
     ];
 
-    let table = Table::new(rows, widths)
-        .header(header)
-        .block(Block::default().title("Items").borders(Borders::ALL));
+    let is_table_focused = app.focused_pane == crate::app::Pane::ItemsList;
+    let table = Table::new(rows, widths).header(header).block(
+        Block::default()
+            .title("Items")
+            .borders(Borders::ALL)
+            .border_style(app.theme.border_style(is_table_focused)),
+    );
 
     f.render_widget(table, chunks[1]);
 }

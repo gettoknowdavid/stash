@@ -5,6 +5,7 @@ use stash_core::ids::{CategoryId, ItemId, WarehouseId};
 use stash_core::item::ItemWithStock;
 use stash_core::stock::StockMovementRecord;
 use stash_core::warehouse::Warehouse;
+use std::cmp::PartialEq;
 use tui_input::backend::crossterm::EventHandler;
 
 pub mod bridge;
@@ -16,6 +17,9 @@ pub const SECTIONS: [&str; 6] =
 pub enum Pane {
     #[default]
     Sidebar,
+    ItemsSearchBar,
+    ItemsList,
+    ItemAdjustKind,
     Content,
 }
 
@@ -262,6 +266,7 @@ impl Default for App {
         Self::new()
     }
 }
+
 impl App {
     #[must_use]
     pub fn new() -> Self {
@@ -427,6 +432,29 @@ impl App {
             Message::None => None,
         }
     }
+    pub fn update_screen_by_pane(&mut self) {
+        match self.focused_pane {
+            Pane::Sidebar => {
+                self.input_mode = InputMode::Normal;
+            }
+            Pane::ItemsSearchBar => {
+                self.input_mode = InputMode::Searching;
+                self.screen = Screen::ItemList;
+                self.sidebar_selected = 1;
+            }
+            Pane::ItemsList => {
+                self.input_mode = InputMode::Normal;
+                self.screen = Screen::ItemList;
+                self.sidebar_selected = 1;
+            }
+            Pane::ItemAdjustKind => {
+                self.input_mode = InputMode::Editing;
+            }
+            _ => {
+                self.input_mode = InputMode::Normal;
+            }
+        }
+    }
     pub fn handle_key(&mut self, key: KeyEvent) -> Option<Command> {
         use crossterm::event::KeyCode;
 
@@ -465,9 +493,23 @@ impl App {
                     return None;
                 }
                 KeyCode::Tab => {
-                    self.focused_pane = match self.focused_pane {
-                        Pane::Sidebar => Pane::Content,
-                        Pane::Content => Pane::Sidebar,
+                    // self.focused_pane = match self.focused_pane {
+                    //     Pane::Sidebar => Pane::ItemsSearchBar,
+                    //     Pane::ItemsSearchBar => Pane::Content,
+                    //     Pane::Content => Pane::Sidebar,
+                    // };
+                    match self.screen {
+                        Screen::ItemList => {
+                            self.focused_pane = match self.focused_pane {
+                                Pane::Sidebar => Pane::ItemsSearchBar,
+                                Pane::ItemsSearchBar => Pane::ItemsList,
+                                Pane::ItemsList => Pane::Sidebar,
+                                _ => Pane::Sidebar,
+                            };
+                            self.update_screen_by_pane();
+                        }
+                        Screen::CategoryList => {}
+                        _ => {}
                     };
                     return None;
                 }
@@ -544,6 +586,7 @@ impl App {
                 let idx = self.filtered.get(self.item_selected).copied()?;
                 let id = self.items.get(idx)?.item.id;
                 self.screen = Screen::ItemDetail(id);
+                self.focused_pane = Pane::ItemAdjustKind;
                 self.item_detail = ItemDetailState::default();
                 self.input_mode = InputMode::Editing;
                 Some(Command::FetchMovements { item_id: Some(id), limit: 20, offset: 0 })
@@ -775,7 +818,7 @@ impl App {
                 self.item_detail.kind = self.item_detail.kind.previous();
                 None
             }
-            KeyCode::Right | KeyCode::Tab => {
+            KeyCode::Right => {
                 self.item_detail.kind = self.item_detail.kind.next();
                 None
             }
@@ -803,6 +846,15 @@ impl App {
                 None // already in Editing mode, no need to set it again
             }
             KeyCode::Enter => self.try_submit_stock_adjustment(item_id),
+            KeyCode::Tab => {
+                self.focused_pane = match self.focused_pane {
+                    Pane::ItemAdjustKind => Pane::Sidebar,
+                    Pane::Sidebar => Pane::ItemAdjustKind,
+                    _ => Pane::ItemAdjustKind,
+                };
+                self.update_screen_by_pane();
+                None
+            }
             _ => {
                 self.item_detail.adjust_input.handle_event(&crossterm::event::Event::Key(key));
                 None
@@ -898,12 +950,25 @@ impl App {
                 self.search_input = tui_input::Input::default();
                 self.recompute_filter();
             }
-            KeyCode::Enter => self.input_mode = InputMode::Normal,
+            KeyCode::Tab => {
+                self.focused_pane = match self.focused_pane {
+                    Pane::ItemsSearchBar => Pane::ItemsList,
+                    Pane::ItemsList => Pane::Sidebar,
+                    Pane::Sidebar => Pane::ItemsSearchBar,
+                    _ => Pane::ItemsSearchBar,
+                };
+                self.update_screen_by_pane();
+            }
+            KeyCode::Enter => {
+                self.input_mode = InputMode::Normal;
+                self.focused_pane = Pane::ItemsList;
+            }
             _ => {
                 self.search_input.handle_event(&Event::Key(key));
                 self.recompute_filter();
             }
         }
+
         None
     }
     fn handle_key_confirming_delete(&mut self, key: KeyEvent) -> Option<Command> {

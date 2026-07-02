@@ -35,10 +35,11 @@ pub fn render(f: &mut ratatui::Frame, app: &App, item_id: ItemId, area: Rect) {
 
     let adjust_block = Block::default()
         .title(format!(
-            "Adjust @ {warehouse_name} — [{}, Tab to change or (← →)]",
+            "Adjust @ {warehouse_name} — [{} (← →)]",
             app.item_detail.kind.label()
         ))
-        .borders(Borders::ALL);
+        .borders(Borders::ALL)
+        .border_style(app.theme.border_style(app.focused_pane == crate::app::Pane::ItemAdjustKind));
     f.render_widget(
         Paragraph::new(app.item_detail.adjust_input.value()).block(adjust_block),
         rows[1],
