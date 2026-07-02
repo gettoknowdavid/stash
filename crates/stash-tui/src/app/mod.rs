@@ -1088,4 +1088,104 @@ impl App {
 
         Some(Command::RecordMovement { item_id, warehouse_id, movement })
     }
+
+    #[cfg(test)]
+    fn screen_matches_item_detail(&self, id: ItemId) -> bool {
+        matches!(self.screen, Screen::ItemDetail(sid) if sid == id)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+    use stash_core::ids::ItemId;
+    use stash_core::item::{Item, ItemWithStock};
+    use stash_core::money::Money;
+    use stash_core::sku::Sku;
+
+    fn key(code: KeyCode) -> Message {
+        Message::KeyPressed(KeyEvent::new(code, KeyModifiers::NONE))
+    }
+
+    fn fake_item(sku: &str, threshold: i64) -> ItemWithStock {
+        ItemWithStock {
+            item: Item {
+                id: ItemId::new(),
+                sku: Sku::parse(sku).unwrap(),
+                name: "Test Item".into(),
+                description: None,
+                category_id: CategoryId::new(),
+                unit_cost: Money(100),
+                reorder_threshold: threshold,
+            },
+            qty: 0,
+        }
+    }
+
+    #[test]
+    fn items_loaded_populates_filtered_list() {
+        let mut app = App::new();
+        app.update(Message::ItemsLoaded(vec![fake_item("A-001", 5), fake_item("A-002", 5)]));
+        assert_eq!(app.items.len(), 2);
+        assert_eq!(app.filtered.len(), 2);
+    }
+
+    #[test]
+    fn quit_key_sets_should_quit() {
+        let mut app = App::new();
+        app.focused_pane = Pane::Content;
+        app.update(key(KeyCode::Char('q')));
+        assert!(app.should_quit);
+    }
+
+    #[test]
+    fn entering_item_detail_switches_to_editing_mode() {
+        let mut app = App::new();
+        let item = fake_item("A-003", 5);
+        let id = item.item.id;
+        app.update(Message::ItemsLoaded(vec![item]));
+        app.focused_pane = Pane::Content;
+        app.screen = Screen::ItemList;
+        app.update(key(KeyCode::Enter));
+        assert!(app.screen_matches_item_detail(id));
+        assert_eq!(app.input_mode, InputMode::Editing);
+    }
+
+    #[test]
+    fn left_right_cycle_adjustment_kind_in_item_detail() {
+        let mut app = App::new();
+        let item = fake_item("A-004", 5);
+        let id = item.item.id;
+        app.update(Message::ItemsLoaded(vec![item.clone()]));
+        app.focused_pane = Pane::Content;
+        app.screen = Screen::ItemDetail(id);
+        app.input_mode = InputMode::Editing;
+
+        assert_eq!(app.item_detail.kind, AdjustKind::Inbound);
+        app.update(key(KeyCode::Right));
+        assert_eq!(app.item_detail.kind, AdjustKind::Outbound);
+        app.update(key(KeyCode::Right));
+        assert_eq!(app.item_detail.kind, AdjustKind::Adjustment);
+        app.update(key(KeyCode::Left));
+        assert_eq!(app.item_detail.kind, AdjustKind::Outbound);
+    }
+
+    #[test]
+    fn deleting_item_returns_to_list_and_clears_selection() {
+        let mut app = App::new();
+        let item = fake_item("A-005", 5);
+        let id = item.item.id;
+        app.update(Message::ItemsLoaded(vec![item]));
+        app.update(Message::ItemDeleted(id));
+        assert!(app.items.is_empty());
+        assert!(matches!(app.screen, Screen::ItemList));
+    }
+
+    #[test]
+    fn error_message_is_shown_in_status_bar() {
+        let mut app = App::new();
+        app.update(Message::Error("SKU already in use".into()));
+        assert_eq!(app.status.as_deref(), Some("SKU already in use"));
+    }
 }

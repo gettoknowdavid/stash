@@ -4,6 +4,15 @@ use crate::error::ValidationError;
 // once you HAVE a Sku value, you know — by its very existence — that
 // it's valid. No need to re-check it everywhere else in the codebase.
 
+// I'd like to move the SKU field from being editable to fully generated. However, I would to use
+// the attribute system for naming them. The attributes are Warehouse-Category-SerialNumber.
+// Example, for an item Standing Fan (in the Electronics category), stored in the Port Harcourt
+// Artillery Warehouse 1, the SKU can be `WPH20-CELECT-0001`. The "W" is warehouse,
+// "PH" is Port Harcourt, the next number is the warehouse serial number (could be a different
+// auto generated column on the DB, separate from the UUID id column), "C" is for Category,
+// "ELECT" is for "Electronics" and the next number is the item's auto generated serial ID number
+// (separate from the UUID id column)
+
 #[derive(Debug, Clone, sqlx::Type)]
 #[sqlx(transparent)]
 pub struct Sku(pub String);
