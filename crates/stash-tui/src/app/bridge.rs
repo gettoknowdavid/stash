@@ -19,19 +19,19 @@ pub async fn spawn_storage_task(
         let result_msg = match cmd {
             Command::FetchItems(filter) => match repos.item.list(filter).await {
                 Ok(items) => Message::ItemsLoaded(items),
-                Err(e) => Message::Error(e.to_string()),
+                Err(e) => Message::Error(e.message()),
             },
             Command::SaveItem(input) => match repos.item.create(&input).await {
                 Ok(item) => Message::ItemSaved(ItemWithStock::from_item(item)),
-                Err(e) => Message::Error(e.to_string()),
+                Err(e) => Message::Error(e.message()),
             },
             Command::UpdateItem(input) => match repos.item.update(&input).await {
                 Ok(item) => Message::ItemUpdated(ItemWithStock::from_item(item)),
-                Err(e) => Message::Error(e.to_string()),
+                Err(e) => Message::Error(e.message()),
             },
             Command::DeleteItem(id) => match repos.item.delete(id).await {
                 Ok(()) => Message::ItemDeleted(id),
-                Err(e) => Message::Error(e.to_string()),
+                Err(e) => Message::Error(e.message()),
             },
             Command::FetchMovements { item_id, limit, offset } => {
                 let result = match item_id {
@@ -40,46 +40,46 @@ pub async fn spawn_storage_task(
                 };
                 match result {
                     Ok(records) => Message::MovementsLoaded(records),
-                    Err(e) => Message::Error(e.to_string()),
+                    Err(e) => Message::Error(e.message()),
                 }
             }
             Command::RecordMovement { item_id, warehouse_id, movement } => {
                 match repos.stock.apply_movement(item_id, warehouse_id, &movement).await {
                     Ok(level) => Message::StockUpdated(item_id, level.quantity),
-                    Err(e) => Message::Error(e.to_string()),
+                    Err(e) => Message::Error(e.message()),
                 }
             }
             Command::FetchCategories => match repos.category.list().await {
                 Ok(categories) => Message::CategoriesLoaded(categories),
-                Err(e) => Message::Error(e.to_string()),
+                Err(e) => Message::Error(e.message()),
             },
             Command::SaveCategory(input) => match repos.category.create(&input).await {
                 Ok(c) => Message::CategorySaved(c),
-                Err(e) => Message::Error(e.to_string()),
+                Err(e) => Message::Error(e.message()),
             },
             Command::UpdateCategory(input) => match repos.category.update(&input).await {
                 Ok(c) => Message::CategoryUpdated(c),
-                Err(e) => Message::Error(e.to_string()),
+                Err(e) => Message::Error(e.message()),
             },
             Command::DeleteCategory(id) => match repos.category.delete(id).await {
                 Ok(()) => Message::CategoryDeleted(id),
-                Err(e) => Message::Error(e.to_string()),
+                Err(e) => Message::Error(e.message()),
             },
             Command::FetchWarehouses => match repos.warehouse.list().await {
                 Ok(warehouses) => Message::WarehousesLoaded(warehouses),
-                Err(e) => Message::Error(e.to_string()),
+                Err(e) => Message::Error(e.message()),
             },
             Command::SaveWarehouse(input) => match repos.warehouse.create(&input).await {
                 Ok(w) => Message::WarehouseSaved(w),
-                Err(e) => Message::Error(e.to_string()),
+                Err(e) => Message::Error(e.message()),
             },
             Command::UpdateWarehouse(input) => match repos.warehouse.update(&input).await {
                 Ok(w) => Message::WarehouseUpdated(w),
-                Err(e) => Message::Error(e.to_string()),
+                Err(e) => Message::Error(e.message()),
             },
             Command::DeleteWarehouse(id) => match repos.warehouse.delete(id).await {
                 Ok(()) => Message::WarehouseDeleted(id),
-                Err(e) => Message::Error(e.to_string()),
+                Err(e) => Message::Error(e.message()),
             },
             Command::None => continue,
         };

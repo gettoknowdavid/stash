@@ -963,7 +963,7 @@ impl App {
         let sku = match stash_core::sku::Sku::parse(form.sku.value()) {
             Ok(sku) => sku,
             Err(e) => {
-                form.error = Some(e.to_string());
+                form.error = Some(e.message());
                 return None;
             }
         };
@@ -985,7 +985,7 @@ impl App {
         let name = match stash_core::category::CategoryName::parse(form.name.value()) {
             Ok(n) => n,
             Err(e) => {
-                form.error = Some(e.to_string());
+                form.error = Some(e.message());
                 return None;
             }
         };
@@ -1018,7 +1018,7 @@ impl App {
         let name = match stash_core::warehouse::WarehouseName::parse(form.name.value()) {
             Ok(n) => n,
             Err(e) => {
-                form.error = Some(e.to_string());
+                form.error = Some(e.message());
                 return None;
             }
         };
