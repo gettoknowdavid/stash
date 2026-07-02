@@ -544,6 +544,7 @@ impl App {
                 let id = self.items.get(idx)?.item.id;
                 self.screen = Screen::ItemDetail(id);
                 self.item_detail = ItemDetailState::default();
+                self.input_mode = InputMode::Editing;
                 Some(Command::FetchMovements { item_id: Some(id), limit: 20, offset: 0 })
             }
             (Action::New, Screen::ItemList) => {
@@ -565,6 +566,7 @@ impl App {
                     name: tui_input::Input::new(entry.item.name.clone()),
                     unit_cost: tui_input::Input::new(entry.item.unit_cost.0.to_string()),
                     editing_id: Some(*id),
+                    focused_field: 1,
                     ..Default::default()
                 };
                 form.category_index = self
@@ -772,9 +774,32 @@ impl App {
                 self.item_detail.kind = self.item_detail.kind.previous();
                 None
             }
-            KeyCode::Right => {
+            KeyCode::Right | KeyCode::Tab => {
                 self.item_detail.kind = self.item_detail.kind.next();
                 None
+            }
+            KeyCode::Char('d') if self.item_detail.adjust_input.value().is_empty() => {
+                self.pending_delete = Some(PendingDelete::Item(item_id));
+                self.input_mode = InputMode::ConfirmingDelete;
+                None
+            }
+            KeyCode::Char('e') if self.item_detail.adjust_input.value().is_empty() => {
+                let entry = self.items.iter().find(|e| e.item.id == item_id)?;
+                let mut form = ItemFormState {
+                    sku: tui_input::Input::new(entry.item.sku.0.clone()),
+                    name: tui_input::Input::new(entry.item.name.clone()),
+                    unit_cost: tui_input::Input::new(entry.item.unit_cost.0.to_string()),
+                    editing_id: Some(item_id),
+                    focused_field: 1,
+                    ..Default::default()
+                };
+                form.category_index = self
+                    .categories
+                    .iter()
+                    .position(|c| c.id == entry.item.category_id)
+                    .unwrap_or(0);
+                self.screen = Screen::AddItem(Box::new(form));
+                None // already in Editing mode, no need to set it again
             }
             KeyCode::Enter => self.try_submit_stock_adjustment(item_id),
             _ => {
